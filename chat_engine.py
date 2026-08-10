@@ -155,6 +155,20 @@ def chat(message):
         lines.append(f'→ {e.get("verdict", "")}')
         lines.append('⚠️ 宏观判断为参考——非投资建议')
         return '\n'.join(lines)
+    # 基金意图
+    if '基金' in message:
+        from fund_analysis import analyze_fund, FUNDS
+        lines = ['📊 基金分析（净值趋势）:']
+        for code, name in FUNDS:
+            try:
+                r = analyze_fund(code, name)
+                if r and 'error' not in r:
+                    y = f' | 1年{r["ret_1y"]:+.1f}%' if r['ret_1y'] is not None else ''
+                    lines.append(f"{r['name']} 净值{r['cur']} | 1月{r['ret_1m']:+.1f}% | 3月{r['ret_3m']:+.1f}%{y} → {r['signal']}")
+            except Exception:
+                pass
+        lines.append('⚠️ 仅供参考——非投资建议')
+        return '\n'.join(lines)
     # 港股意图
     if '港股' in message:
         from hk_stock import analyze_hk, HK_STOCKS
