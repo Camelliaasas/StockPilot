@@ -125,6 +125,20 @@ def api_curve():
             pass
     return jsonify(out)
 
+@app.route('/api/paper')
+def api_paper():
+    """模拟盘回放（MA5/10——2024-2026）"""
+    from paper_replay import replay
+    out = []
+    for code, name in [('600519', '贵州茅台'), ('300750', '宁德时代'), ('603259', '药明康德')]:
+        try:
+            r = replay(code, name)
+            if r and 'error' not in r:
+                out.append(r)
+        except Exception:
+            pass
+    return jsonify(out)
+
 @app.route('/api/backtest')
 def api_backtest():
     """策略回测汇总（10 策略——胜率/平均超额）"""

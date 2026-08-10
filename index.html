@@ -1305,6 +1305,273 @@
 	    border-radius: var(--radius-sm);
 	    line-height: 1.6;
 	  }
+		  /* ── 模拟盘回放 ── */
+		  .paper-section { padding: 16px 18px; }
+		  .paper-section .section-header .title::before {
+		    background: #22d3ee;
+		    box-shadow: 0 0 8px #22d3ee;
+		  }
+		  .paper-grid {
+		    display: grid;
+		    grid-template-columns: repeat(3, 1fr);
+		    gap: 14px;
+		    margin-bottom: 10px;
+		  }
+		  @media (max-width: 900px) {
+		    .paper-grid { grid-template-columns: 1fr; }
+		  }
+		  .paper-card {
+		    background: linear-gradient(145deg, rgba(22,27,34,0.95) 0%, rgba(28,35,51,0.9) 100%);
+		    border: 1px solid var(--border);
+		    border-radius: var(--radius);
+		    padding: 18px 20px;
+		    cursor: pointer;
+		    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+		    position: relative;
+		    overflow: hidden;
+		  }
+		  .paper-card::before {
+		    content: '';
+		    position: absolute;
+		    top: 0; left: 0; right: 0;
+		    height: 1px;
+		    background: linear-gradient(90deg, transparent, rgba(34,211,238,0.4), transparent);
+		    opacity: 0;
+		    transition: opacity 0.3s;
+		  }
+		  .paper-card:hover {
+		    border-color: rgba(34,211,238,0.45);
+		    box-shadow: 0 8px 32px rgba(34,211,238,0.12), inset 0 1px 0 rgba(34,211,238,0.06);
+		    transform: translateY(-3px);
+		  }
+		  .paper-card:hover::before { opacity: 1; }
+		  .paper-card.expanded {
+		    border-color: rgba(34,211,238,0.55);
+		    box-shadow: 0 10px 40px rgba(34,211,238,0.16), inset 0 1px 0 rgba(34,211,238,0.08);
+		    grid-column: 1 / -1;
+		  }
+		  .paper-card .pc-header {
+		    display: flex;
+		    align-items: center;
+		    justify-content: space-between;
+		    margin-bottom: 14px;
+		  }
+		  .paper-card .pc-name {
+		    font-size: 16px;
+		    font-weight: 700;
+		    color: var(--text);
+		    letter-spacing: 0.01em;
+		  }
+		  .paper-card .pc-code {
+		    font-size: 11px;
+		    color: var(--text-secondary);
+		    font-family: 'SF Mono','Cascadia Code',monospace;
+		    background: rgba(34,211,238,0.1);
+		    padding: 3px 10px;
+		    border-radius: 10px;
+		    border: 1px solid rgba(34,211,238,0.2);
+		  }
+		  .paper-card .pc-body {
+		    display: flex;
+		    align-items: flex-end;
+		    justify-content: space-between;
+		    gap: 12px;
+		    flex-wrap: wrap;
+		  }
+		  .paper-card .pc-nav-group {
+		    display: flex;
+		    flex-direction: column;
+		  }
+		  .paper-card .pc-nav-label {
+		    font-size: 11px;
+		    color: var(--text-secondary);
+		    text-transform: uppercase;
+		    letter-spacing: 0.05em;
+		    margin-bottom: 4px;
+		  }
+		  .paper-card .pc-nav-value {
+		    font-size: 26px;
+		    font-weight: 800;
+		    font-variant-numeric: tabular-nums;
+		    font-family: 'SF Mono','Cascadia Code','JetBrains Mono',monospace;
+		    color: var(--text);
+		    line-height: 1.1;
+		  }
+		  .paper-card .pc-ret {
+		    font-size: 28px;
+		    font-weight: 800;
+		    font-variant-numeric: tabular-nums;
+		    font-family: 'SF Mono','Cascadia Code','JetBrains Mono',monospace;
+		    line-height: 1.1;
+		  }
+		  .paper-card .pc-ret.positive { color: #ef4444; }
+		  .paper-card .pc-ret.negative { color: #22c55e; }
+		  .paper-card .pc-meta {
+		    display: flex;
+		    align-items: center;
+		    gap: 12px;
+		    margin-top: 12px;
+		    flex-wrap: wrap;
+		  }
+		  .paper-card .pc-trades-count {
+		    font-size: 12px;
+		    color: var(--text-secondary);
+		    font-weight: 500;
+		  }
+		  .paper-card .pc-trades-count span {
+		    color: var(--text);
+		    font-weight: 700;
+		  }
+		  .pc-holding-badge {
+		    display: inline-flex;
+		    align-items: center;
+		    gap: 5px;
+		    font-size: 12px;
+		    font-weight: 700;
+		    padding: 4px 14px;
+		    border-radius: 14px;
+		    letter-spacing: 0.03em;
+		  }
+		  .pc-holding-badge.holding {
+		    background: rgba(34,197,94,0.15);
+		    color: #3fb950;
+		    border: 1px solid rgba(34,197,94,0.3);
+		  }
+		  .pc-holding-badge.holding::before {
+		    content: '';
+		    width: 7px; height: 7px;
+		    border-radius: 50%;
+		    background: #3fb950;
+		    box-shadow: 0 0 6px #3fb950;
+		    animation: holdingPulse 2s ease-in-out infinite;
+		  }
+		  @keyframes holdingPulse {
+		    0%, 100% { opacity: 1; }
+		    50% { opacity: 0.4; }
+		  }
+		  .pc-holding-badge.empty {
+		    background: rgba(139,148,158,0.12);
+		    color: #8b949e;
+		    border: 1px solid rgba(139,148,158,0.25);
+		  }
+		  .pc-expand-hint {
+		    font-size: 11px;
+		    color: var(--text-secondary);
+		    margin-top: 12px;
+		    text-align: center;
+		    opacity: 0.6;
+		    transition: opacity 0.2s;
+		  }
+		  .paper-card:hover .pc-expand-hint { opacity: 1; }
+		  /* ── 展开区域 ── */
+		  .paper-detail {
+		    display: none;
+		    margin-top: 18px;
+		    padding-top: 18px;
+		    border-top: 1px solid rgba(34,211,238,0.2);
+		    animation: detailIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+		  }
+		  @keyframes detailIn {
+		    from { opacity: 0; transform: translateY(-10px); }
+		    to { opacity: 1; transform: translateY(0); }
+		  }
+		  .paper-card.expanded .paper-detail { display: block; }
+		  .paper-detail-grid {
+		    display: grid;
+		    grid-template-columns: 1fr 340px;
+		    gap: 18px;
+		  }
+		  @media (max-width: 900px) {
+		    .paper-detail-grid { grid-template-columns: 1fr; }
+		  }
+		  .paper-chart-container {
+		    width: 100%;
+		    height: 320px;
+		    background: rgba(13,17,23,0.6);
+		    border-radius: var(--radius-sm);
+		    border: 1px solid var(--border);
+		  }
+		  .paper-trades-panel {
+		    background: rgba(13,17,23,0.6);
+		    border: 1px solid var(--border);
+		    border-radius: var(--radius-sm);
+		    padding: 14px 16px;
+		    display: flex;
+		    flex-direction: column;
+		  }
+		  .paper-trades-panel .pt-title {
+		    font-size: 13px;
+		    font-weight: 700;
+		    color: var(--text);
+		    margin-bottom: 12px;
+		    display: flex;
+		    align-items: center;
+		    gap: 6px;
+		  }
+		  .paper-trades-panel .pt-title::before {
+		    content: '';
+		    width: 3px; height: 16px;
+		    border-radius: 2px;
+		    background: #22d3ee;
+		  }
+		  .pt-trade-row {
+		    display: grid;
+		    grid-template-columns: 60px 85px 46px 60px;
+		    align-items: center;
+		    gap: 6px;
+		    padding: 7px 0;
+		    border-bottom: 1px solid rgba(48,54,61,0.4);
+		    font-size: 12px;
+		  }
+		  .pt-trade-row:last-child { border-bottom: none; }
+		  .pt-trade-date {
+		    color: var(--text-secondary);
+		    font-family: 'SF Mono','Cascadia Code',monospace;
+		    font-size: 11px;
+		  }
+		  .pt-trade-action {
+		    font-weight: 700;
+		    font-size: 11px;
+		    padding: 2px 8px;
+		    border-radius: 6px;
+		    text-align: center;
+		    letter-spacing: 0.03em;
+		  }
+		  .pt-trade-action.buy {
+		    background: rgba(239,68,68,0.15);
+		    color: #ef4444;
+		  }
+		  .pt-trade-action.sell {
+		    background: rgba(34,197,94,0.15);
+		    color: #22c55e;
+		  }
+		  .pt-trade-price {
+		    font-family: 'SF Mono','Cascadia Code',monospace;
+		    color: var(--text);
+		    font-weight: 600;
+		    text-align: right;
+		  }
+		  .pt-trade-shares {
+		    font-family: 'SF Mono','Cascadia Code',monospace;
+		    color: var(--text-secondary);
+		    text-align: right;
+		  }
+		  .pt-empty {
+		    color: var(--text-secondary);
+		    font-size: 12px;
+		    text-align: center;
+		    padding: 20px;
+		  }
+		  .paper-note {
+		    font-size: 12px;
+		    color: var(--text-secondary);
+		    text-align: center;
+		    padding: 10px 16px;
+		    background: rgba(34,211,238,0.06);
+		    border: 1px solid rgba(34,211,238,0.15);
+		    border-radius: var(--radius-sm);
+		    line-height: 1.6;
+		  }
 
 	  .futures-section { padding: 16px 18px; }
   .futures-grid {
@@ -1769,6 +2036,17 @@
 	      </table>
 	    </div>
 	    <div class="backtest-note" id="backtestNote" style="display:none;"></div>
+	  </div>
+
+	  <!-- ── 模拟盘回放 ── -->
+	  <div class="glass-card paper-section">
+	    <div class="section-header">
+	      <span class="title">📋 模拟盘回放</span>
+	    </div>
+	    <div class="paper-grid" id="paperGrid">
+	      <div class="section-loading">⏳ 加载模拟盘数据...</div>
+	    </div>
+	    <div class="paper-note">MA(5,10) 策略模拟盘回放——2024-2026——滑点0.1%+手续费万2.5——10万初始</div>
 	  </div>
 
   <!-- ── 期货区 ── -->
@@ -2945,6 +3223,262 @@ function renderRisk(data) {
 	  }
 	}
 
+	// ── 模拟盘回放 ──
+	let paperData = [];
+	let paperCharts = {};
+
+	async function loadPaper() {
+	  const grid = document.getElementById("paperGrid");
+	  try {
+	    const resp = await fetch("/api/paper");
+	    if (!resp.ok) throw new Error("API 错误");
+	    paperData = await resp.json();
+	    renderPaperCards();
+	  } catch {
+	    paperData = generateMockPaper();
+	    renderPaperCards();
+	  }
+	}
+
+	function generateMockPaper() {
+	  const stocks = [
+	    { name: "贵州茅台", code: "600519" },
+	    { name: "宁德时代", code: "300750" },
+	    { name: "药明康德", code: "603259" },
+	  ];
+	  return stocks.map((s, idx) => {
+	    const basePrice = [1680, 210, 62][idx];
+	    const nav = [];
+	    let cash = 100000, shares = 0, navVal = 100000;
+	    const trades = [];
+	    // 生成 2024-01 到 2026-08 的净值曲线（每周一个点）
+	    const start = new Date(2024, 0, 1);
+	    const end = new Date(2026, 7, 10);
+	    let pos = false;
+	    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 7)) {
+	      const ds = d.toISOString().slice(0, 10);
+	      const r = (Math.random() - 0.48) * 0.06;
+	      const price = basePrice * (1 + r);
+	      if (!pos && Math.random() < 0.08) {
+	        // BUY
+	        const buyPrice = basePrice * (1 + r * 0.5);
+	        shares = Math.floor(cash * 0.95 / buyPrice / 100) * 100;
+	        const cost = shares * buyPrice * 1.00125;
+	        if (shares > 0 && cost <= cash) {
+	          cash -= cost;
+	          pos = true;
+	          trades.push({ date: ds, action: "BUY", price: +buyPrice.toFixed(2), shares });
+	        }
+	      } else if (pos && Math.random() < 0.08) {
+	        // SELL
+	        const sellPrice = basePrice * (1 + r * 0.5);
+	        const proceeds = shares * sellPrice * 0.99875;
+	        cash += proceeds;
+	        trades.push({ date: ds, action: "SELL", price: +sellPrice.toFixed(2), shares });
+	        shares = 0;
+	        pos = false;
+	      }
+	      navVal = cash + shares * basePrice * (1 + r);
+	      nav.push([ds, +navVal.toFixed(0)]);
+	    }
+	    // ensure ending with a position for interest
+	    if (!pos && trades.length > 0 && trades[trades.length - 1].action === "SELL") {
+	      // keep last state
+	    }
+	    const finalNav = nav[nav.length - 1][1];
+	    const ret = +(((finalNav - 100000) / 100000) * 100).toFixed(1);
+	    return {
+	      name: s.name,
+	      code: s.code,
+	      nav,
+	      trades: trades.slice(-10),
+	      trades_count: trades.length,
+	      ret,
+	      final_nav: finalNav,
+	      holding: pos,
+	    };
+	  });
+	}
+
+	function renderPaperCards() {
+	  const grid = document.getElementById("paperGrid");
+	  if (!paperData || !paperData.length) {
+	    grid.innerHTML = '<div class="section-loading">暂无模拟盘数据</div>';
+	    return;
+	  }
+	  grid.innerHTML = paperData.map((d, i) => {
+	    const retCls = d.ret >= 0 ? "positive" : "negative";
+	    const retSign = d.ret >= 0 ? "+" : "";
+	    const holdingCls = d.holding ? "holding" : "empty";
+	    const holdingText = d.holding ? "持仓中" : "空仓";
+	    return '<div class="paper-card" id="paperCard' + i + '" onclick="togglePaperCard(' + i + ')">'
+	      + '<div class="pc-header">'
+	      + '<span class="pc-name">' + d.name + '</span>'
+	      + '<span class="pc-code">' + d.code + '</span>'
+	      + '</div>'
+	      + '<div class="pc-body">'
+	      + '<div class="pc-nav-group">'
+	      + '<span class="pc-nav-label">最终净值</span>'
+	      + '<span class="pc-nav-value">¥' + (d.final_nav || 0).toLocaleString() + '</span>'
+	      + '</div>'
+	      + '<span class="pc-ret ' + retCls + '">' + retSign + d.ret + '%</span>'
+	      + '</div>'
+	      + '<div class="pc-meta">'
+	      + '<span class="pc-trades-count">交易 <span>' + (d.trades_count || 0) + '</span> 次</span>'
+	      + '<span class="pc-holding-badge ' + holdingCls + '">' + holdingText + '</span>'
+	      + '</div>'
+	      + '<div class="pc-expand-hint">点击查看净值曲线 &amp; 交易记录</div>'
+	      + '<div class="paper-detail" id="paperDetail' + i + '">'
+	      + '<div class="paper-detail-grid">'
+	      + '<div class="paper-chart-container" id="paperChart' + i + '"></div>'
+	      + '<div class="paper-trades-panel">'
+	      + '<div class="pt-title">最近 5 笔交易</div>'
+	      + '<div id="paperTrades' + i + '"></div>'
+	      + '</div>'
+	      + '</div>'
+	      + '</div>'
+	      + '</div>';
+	  }).join("");
+	}
+
+	function togglePaperCard(idx) {
+	  const card = document.getElementById("paperCard" + idx);
+	  if (!card) return;
+	  const wasExpanded = card.classList.contains("expanded");
+
+	  // 折叠所有其他卡片
+	  document.querySelectorAll(".paper-card.expanded").forEach(c => {
+	    if (c !== card) {
+	      c.classList.remove("expanded");
+	      const idMatch = c.id.match(/\d+$/);
+	      if (idMatch && paperCharts[idMatch[0]]) {
+	        paperCharts[idMatch[0]].dispose();
+	        delete paperCharts[idMatch[0]];
+	      }
+	    }
+	  });
+
+	  if (wasExpanded) {
+	    card.classList.remove("expanded");
+	    if (paperCharts[idx]) {
+	      paperCharts[idx].dispose();
+	      delete paperCharts[idx];
+	    }
+	  } else {
+	    card.classList.add("expanded");
+	    // 延迟渲染图表（等 DOM 展开动画完成）
+	    setTimeout(() => renderPaperDetail(idx), 100);
+	  }
+	}
+
+	function renderPaperDetail(idx) {
+	  const d = paperData[idx];
+	  if (!d) return;
+
+	  // 渲染交易记录
+	  const tradesEl = document.getElementById("paperTrades" + idx);
+	  const recentTrades = (d.trades || []).slice(-5).reverse();
+	  if (recentTrades.length === 0) {
+	    tradesEl.innerHTML = '<div class="pt-empty">暂无交易记录</div>';
+	  } else {
+	    tradesEl.innerHTML = recentTrades.map(t => {
+	      const actCls = t.action === "BUY" ? "buy" : "sell";
+	      return '<div class="pt-trade-row">'
+	        + '<span class="pt-trade-date">' + (t.date || "") + '</span>'
+	        + '<span class="pt-trade-action ' + actCls + '">' + t.action + '</span>'
+	        + '<span class="pt-trade-price">¥' + (t.price || 0) + '</span>'
+	        + '<span class="pt-trade-shares">' + (t.shares || 0) + '股</span>'
+	        + '</div>';
+	    }).join("");
+	  }
+
+	  // 渲染净值曲线
+	  const chartDom = document.getElementById("paperChart" + idx);
+	  if (!chartDom) return;
+
+	  if (paperCharts[idx]) paperCharts[idx].dispose();
+	  const chart = echarts.init(chartDom, null, { devicePixelRatio: window.devicePixelRatio || 1 });
+	  paperCharts[idx] = chart;
+
+	  const navData = d.nav || [];
+	  const dates = navData.map(p => p[0]);
+	  const values = navData.map(p => p[1]);
+
+	  const option = {
+	    backgroundColor: "transparent",
+	    grid: {
+	      left: "10%",
+	      right: "6%",
+	      top: "8%",
+	      bottom: "10%",
+	    },
+	    xAxis: {
+	      type: "category",
+	      data: dates,
+	      axisLine: { lineStyle: { color: "#30363d" } },
+	      axisTick: { show: false },
+	      axisLabel: {
+	        color: "#8b949e",
+	        fontSize: 10,
+	        interval: Math.max(Math.floor(dates.length / 8), 1),
+	      },
+	      splitLine: { show: false },
+	    },
+	    yAxis: {
+	      type: "value",
+	      scale: true,
+	      splitNumber: 5,
+	      axisLine: { show: false },
+	      axisTick: { show: false },
+	      axisLabel: {
+	        color: "#8b949e",
+	        fontSize: 10,
+	        formatter: function(v) { return "¥" + (v / 10000).toFixed(1) + "万"; },
+	      },
+	      splitLine: { lineStyle: { color: "#21262d", type: "dashed" } },
+	    },
+	    tooltip: {
+	      trigger: "axis",
+	      backgroundColor: "#161b22",
+	      borderColor: "#30363d",
+	      textStyle: { color: "#e6edf3", fontSize: 12 },
+	      formatter: function(params) {
+	        const p = params[0];
+	        return '<div style="font-weight:600;margin-bottom:4px">' + p.axisValue + '</div>'
+	          + '净值：<b>¥' + Number(p.data).toLocaleString() + '</b>';
+	      },
+	    },
+	    series: [
+	      {
+	        name: "模拟净值",
+	        type: "line",
+	        data: values,
+	        smooth: true,
+	        symbol: "none",
+	        lineStyle: {
+	          color: "#22d3ee",
+	          width: 2.5,
+	          shadowBlur: 12,
+	          shadowColor: "rgba(34,211,238,0.5)",
+	        },
+	        itemStyle: { color: "#22d3ee" },
+	        areaStyle: {
+	          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+	            { offset: 0, color: "rgba(34,211,238,0.18)" },
+	            { offset: 1, color: "rgba(34,211,238,0.01)" },
+	          ]),
+	        },
+	      },
+	    ],
+	  };
+
+	  chart.setOption(option, true);
+	  // 响应式 resize
+	  window.addEventListener("resize", () => {
+	    if (paperCharts[idx]) paperCharts[idx].resize();
+	  });
+	}
+
 // ── 期货区 ──
 async function loadFutures() {
   const grid = document.getElementById('futuresGrid');
@@ -3286,6 +3820,7 @@ render();
   loadPortfolio();
   loadRisk();
   loadBacktest();
+  loadPaper();
   loadFutures();
 })();
 </script>
