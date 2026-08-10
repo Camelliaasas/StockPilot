@@ -127,17 +127,39 @@ def api_curve():
 
 @app.route('/api/paper')
 def api_paper():
-    """模拟盘回放（MA5/10——2024-2026）"""
-    from paper_replay import replay
+    """模拟盘多策略回放（MA/MACD/海龟——2024-2026）"""
+    from paper_replay import replay_multi
     out = []
     for code, name in [('600519', '贵州茅台'), ('300750', '宁德时代'), ('603259', '药明康德')]:
         try:
-            r = replay(code, name)
-            if r and 'error' not in r:
-                out.append(r)
+            rs = replay_multi(code, name)
+            if rs:
+                out.append({'name': name, 'code': code, 'strategies': rs})
         except Exception:
             pass
     return jsonify(out)
+
+@app.route('/api/predict_history')
+def api_predict_history():
+    """预测历史（时间线——方向/置信/验证——前端图表）"""
+    conn = get_conn()
+    rows = conn.execute("SELECT date, code, direction, confidence, actual_direction, correct FROM predictions ORDER BY id DESC LIMIT 30").fetchall()
+    conn.close()
+    data = []
+    for r in rows:
+        conf = 0
+        if r['confidence'] is not None:
+            conf = float(r['confidence']) * 100 if r['confidence'] <= 1 else float(r['confidence'])
+        def s(v):
+            if isinstance(v, bytes):
+                return v.decode('utf-8', errors='replace')
+            return v
+        data.append({
+            'date': s(r['date']), 'code': s(r['code']), 'direction': s(r['direction']),
+            'confidence': round(conf, 0), 'actual': s(r['actual_direction']),
+            'correct': r['correct'],
+        })
+    return jsonify({'history': data})
 
 @app.route('/api/verify')
 def api_verify():

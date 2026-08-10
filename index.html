@@ -1378,82 +1378,111 @@
 		    gap: 12px;
 		    flex-wrap: wrap;
 		  }
-		  .paper-card .pc-nav-group {
-		    display: flex;
-		    flex-direction: column;
-		  }
-		  .paper-card .pc-nav-label {
-		    font-size: 11px;
-		    color: var(--text-secondary);
-		    text-transform: uppercase;
-		    letter-spacing: 0.05em;
-		    margin-bottom: 4px;
-		  }
-		  .paper-card .pc-nav-value {
-		    font-size: 26px;
-		    font-weight: 800;
-		    font-variant-numeric: tabular-nums;
-		    font-family: 'SF Mono','Cascadia Code','JetBrains Mono',monospace;
-		    color: var(--text);
-		    line-height: 1.1;
-		  }
-		  .paper-card .pc-ret {
-		    font-size: 28px;
-		    font-weight: 800;
-		    font-variant-numeric: tabular-nums;
-		    font-family: 'SF Mono','Cascadia Code','JetBrains Mono',monospace;
-		    line-height: 1.1;
-		  }
-		  .paper-card .pc-ret.positive { color: #ef4444; }
-		  .paper-card .pc-ret.negative { color: #22c55e; }
-		  .paper-card .pc-meta {
-		    display: flex;
-		    align-items: center;
-		    gap: 12px;
-		    margin-top: 12px;
-		    flex-wrap: wrap;
-		  }
-		  .paper-card .pc-trades-count {
-		    font-size: 12px;
-		    color: var(--text-secondary);
-		    font-weight: 500;
-		  }
-		  .paper-card .pc-trades-count span {
-		    color: var(--text);
-		    font-weight: 700;
-		  }
-		  .pc-holding-badge {
-		    display: inline-flex;
-		    align-items: center;
-		    gap: 5px;
-		    font-size: 12px;
-		    font-weight: 700;
-		    padding: 4px 14px;
-		    border-radius: 14px;
-		    letter-spacing: 0.03em;
-		  }
-		  .pc-holding-badge.holding {
-		    background: rgba(34,197,94,0.15);
-		    color: #3fb950;
-		    border: 1px solid rgba(34,197,94,0.3);
-		  }
-		  .pc-holding-badge.holding::before {
-		    content: '';
-		    width: 7px; height: 7px;
-		    border-radius: 50%;
-		    background: #3fb950;
-		    box-shadow: 0 0 6px #3fb950;
-		    animation: holdingPulse 2s ease-in-out infinite;
-		  }
-		  @keyframes holdingPulse {
-		    0%, 100% { opacity: 1; }
-		    50% { opacity: 0.4; }
-		  }
-		  .pc-holding-badge.empty {
-		    background: rgba(139,148,158,0.12);
-		    color: #8b949e;
-		    border: 1px solid rgba(139,148,158,0.25);
-		  }
+		  			  /* ── 多策略对比行（胶囊） ── */
+			  .pc-strategies {
+			    display: flex;
+			    flex-direction: column;
+			    gap: 6px;
+			  }
+			  .pc-strat-row {
+			    display: flex;
+			    align-items: center;
+			    gap: 12px;
+			    padding: 9px 14px;
+			    background: rgba(13,17,23,0.55);
+			    border: 1px solid rgba(48,54,61,0.45);
+			    border-radius: 10px;
+			    transition: all 0.2s;
+			  }
+			  .pc-strat-row:hover {
+			    border-color: rgba(110,64,201,0.35);
+			    background: rgba(13,17,23,0.8);
+			  }
+			  .pc-strat-label {
+			    font-size: 11px;
+			    font-weight: 700;
+			    padding: 4px 12px;
+			    border-radius: 12px;
+			    letter-spacing: 0.03em;
+			    white-space: nowrap;
+			    min-width: 76px;
+			    text-align: center;
+			    flex-shrink: 0;
+			  }
+			  .pc-strat-label.ma   { background: rgba(255,140,66,0.15);  color: #ff8c42; border: 1px solid rgba(255,140,66,0.28); }
+			  .pc-strat-label.macd { background: rgba(59,130,246,0.15);  color: #3b82f6; border: 1px solid rgba(59,130,246,0.28); }
+			  .pc-strat-label.trtl { background: rgba(168,123,250,0.15); color: #a78bfa; border: 1px solid rgba(168,123,250,0.28); }
+			  .pc-strat-ret {
+			    font-size: 22px;
+			    font-weight: 800;
+			    font-variant-numeric: tabular-nums;
+			    font-family: 'SF Mono','Cascadia Code','JetBrains Mono',monospace;
+			    min-width: 82px;
+			    flex-shrink: 0;
+			  }
+			  .pc-strat-ret.positive { color: #ef4444; }
+			  .pc-strat-ret.negative { color: #22c55e; }
+			  .pc-strat-meta {
+			    display: flex;
+			    align-items: center;
+			    gap: 10px;
+			    margin-left: auto;
+			    font-size: 11.5px;
+			    color: var(--text-secondary);
+			    flex-shrink: 0;
+			  }
+			  .pc-strat-meta .ps-trades {
+			    font-weight: 500;
+			    white-space: nowrap;
+			  }
+			  .pc-strat-meta .ps-trades span {
+			    color: var(--text);
+			    font-weight: 700;
+			  }
+			  .pc-strat-meta .ps-final-nav {
+			    font-family: 'SF Mono','Cascadia Code',monospace;
+			    font-size: 11px;
+			    color: var(--text-secondary);
+			    white-space: nowrap;
+			  }
+			  .pc-holding-dot {
+			    display: inline-block;
+			    width: 7px; height: 7px;
+			    border-radius: 50%;
+			    flex-shrink: 0;
+			  }
+			  .pc-holding-dot.holding {
+			    background: #3fb950;
+			    box-shadow: 0 0 7px #3fb950;
+			    animation: holdingPulse 2s ease-in-out infinite;
+			  }
+			  .pc-holding-dot.empty { background: #484f58; }
+			  @keyframes holdingPulse {
+			    0%, 100% { opacity: 1; }
+			    50% { opacity: 0.35; }
+			  }
+			  .pc-holding-badge {
+			    display: inline-flex;
+			    align-items: center;
+			    gap: 5px;
+			    font-size: 11px;
+			    font-weight: 700;
+			    padding: 3px 10px;
+			    border-radius: 10px;
+			    letter-spacing: 0.03em;
+			    white-space: nowrap;
+			  }
+			  .pc-holding-badge.holding {
+			    background: rgba(34,197,94,0.12);
+			    color: #3fb950;
+			    border: 1px solid rgba(34,197,94,0.25);
+			  }
+			  .pc-holding-badge.empty {
+			    background: rgba(139,148,158,0.1);
+			    color: #8b949e;
+			    border: 1px solid rgba(139,148,158,0.2);
+			  }
+
 		  .pc-expand-hint {
 		    font-size: 11px;
 		    color: var(--text-secondary);
@@ -1556,6 +1585,26 @@
 		    color: var(--text-secondary);
 		    text-align: right;
 		  }
+		  /* ── 展开区：各策略交易分组 ── */
+		  .pt-strat-section {
+		    margin-bottom: 14px;
+		  }
+		  .pt-strat-section:last-child { margin-bottom: 0; }
+		  .pt-strat-section .pt-strat-label {
+		    font-size: 11px;
+		    font-weight: 700;
+		    padding: 3px 12px;
+		    border-radius: 8px;
+		    display: inline-block;
+		    margin-bottom: 6px;
+		    letter-spacing: 0.03em;
+		    border: 1px solid;
+		  }
+		  .pt-strat-section .pt-trade-row {
+		    padding: 5px 0;
+		    font-size: 11px;
+		  }
+		  .pt-strat-section .pt-trade-row:last-child { border-bottom: none; }
 		  .pt-empty {
 		    color: var(--text-secondary);
 		    font-size: 12px;
@@ -1699,6 +1748,62 @@
 		    font-size: 13px;
 		    padding: 24px;
 		  }
+	  /* ── 预测历史图表区 ── */
+	  .predict-history-section { padding: 16px 18px; }
+	  .predict-history-section .section-header .title::before {
+	    background: linear-gradient(135deg, #a78bfa, #c084fc);
+	    box-shadow: 0 0 8px #a78bfa;
+	  }
+	  .ph-chart-grid {
+	    display: grid;
+	    grid-template-columns: 1fr 1fr;
+	    gap: 18px;
+	  }
+	  @media (max-width: 900px) {
+	    .ph-chart-grid { grid-template-columns: 1fr; }
+	  }
+	  .ph-chart-card {
+	    background: var(--bg);
+	    border: 1px solid var(--border);
+	    border-radius: var(--radius-sm);
+	    padding: 14px 16px;
+	    transition: all 0.2s;
+	  }
+	  .ph-chart-card:hover {
+	    border-color: rgba(110,64,201,0.4);
+	    box-shadow: 0 4px 20px rgba(110,64,201,0.08);
+	  }
+	  .ph-chart-card .ph-chart-title {
+	    font-size: 13px;
+	    font-weight: 700;
+	    color: var(--text);
+	    margin-bottom: 8px;
+	    display: flex;
+	    align-items: center;
+	    gap: 8px;
+	  }
+	  .ph-chart-container {
+	    width: 100%;
+	    height: 360px;
+	  }
+	  @media (max-width: 768px) {
+	    .ph-chart-container { height: 280px; }
+	  }
+	  .ph-empty-state {
+	    text-align: center;
+	    padding: 48px 20px;
+	    color: var(--text-secondary);
+	    font-size: 14px;
+	    line-height: 1.8;
+	    display: flex;
+	    flex-direction: column;
+	    align-items: center;
+	    gap: 6px;
+	  }
+	  .ph-empty-state .ph-empty-icon {
+	    font-size: 40px;
+	    opacity: 0.5;
+	  }
 	  .futures-section { padding: 16px 18px; }
   .futures-grid {
     display: grid;
@@ -2181,7 +2286,7 @@
 	    <div class="paper-grid" id="paperGrid">
 	      <div class="section-loading">⏳ 加载模拟盘数据...</div>
 	    </div>
-	    <div class="paper-note">MA(5,10) 策略模拟盘回放——2024-2026——滑点0.1%+手续费万2.5——10万初始</div>
+	    <div class="paper-note">MA双均线 / MACD / 海龟突破——模拟盘回放——2024-2026——滑点0.1%+手续费万2.5——10万初始</div>
 	  </div>
 
 
@@ -2192,6 +2297,33 @@
     </div>
     <div id="verifyContent">
       <div class="verify-loading">⏳ 加载验证数据...</div>
+    </div>
+  </div>
+
+  <!-- ── 预测历史图表区 ── -->
+  <div class="glass-card predict-history-section">
+    <div class="section-header">
+      <span class="title">📈 预测历史图表</span>
+    </div>
+    <div class="ph-empty-state" id="phEmptyState">
+      <span class="ph-empty-icon">📊</span>
+      <span>预测积累中——明日开始验证</span>
+    </div>
+    <div class="ph-chart-grid" id="phChartGrid" style="display:none;">
+      <div class="ph-chart-card">
+        <div class="ph-chart-title">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:linear-gradient(135deg,#a78bfa,#c084fc);"></span>
+          预测时间线
+        </div>
+        <div class="ph-chart-container" id="predictTimelineChart"></div>
+      </div>
+      <div class="ph-chart-card">
+        <div class="ph-chart-title">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#c084fc;"></span>
+          准确率趋势
+        </div>
+        <div class="ph-chart-container" id="accuracyTrendChart"></div>
+      </div>
     </div>
   </div>
 
@@ -3387,106 +3519,116 @@ function renderRisk(data) {
 	}
 
 	function generateMockPaper() {
-	  const stocks = [
-	    { name: "贵州茅台", code: "600519" },
-	    { name: "宁德时代", code: "300750" },
-	    { name: "药明康德", code: "603259" },
-	  ];
-	  return stocks.map((s, idx) => {
-	    const basePrice = [1680, 210, 62][idx];
-	    const nav = [];
-	    let cash = 100000, shares = 0, navVal = 100000;
-	    const trades = [];
-	    // 生成 2024-01 到 2026-08 的净值曲线（每周一个点）
-	    const start = new Date(2024, 0, 1);
-	    const end = new Date(2026, 7, 10);
-	    let pos = false;
-	    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 7)) {
-	      const ds = d.toISOString().slice(0, 10);
-	      const r = (Math.random() - 0.48) * 0.06;
-	      const price = basePrice * (1 + r);
-	      if (!pos && Math.random() < 0.08) {
-	        // BUY
-	        const buyPrice = basePrice * (1 + r * 0.5);
-	        shares = Math.floor(cash * 0.95 / buyPrice / 100) * 100;
-	        const cost = shares * buyPrice * 1.00125;
-	        if (shares > 0 && cost <= cash) {
-	          cash -= cost;
-	          pos = true;
-	          trades.push({ date: ds, action: "BUY", price: +buyPrice.toFixed(2), shares });
-	        }
-	      } else if (pos && Math.random() < 0.08) {
-	        // SELL
-	        const sellPrice = basePrice * (1 + r * 0.5);
-	        const proceeds = shares * sellPrice * 0.99875;
-	        cash += proceeds;
-	        trades.push({ date: ds, action: "SELL", price: +sellPrice.toFixed(2), shares });
-	        shares = 0;
-	        pos = false;
-	      }
-	      navVal = cash + shares * basePrice * (1 + r);
-	      nav.push([ds, +navVal.toFixed(0)]);
-	    }
-	    // ensure ending with a position for interest
-	    if (!pos && trades.length > 0 && trades[trades.length - 1].action === "SELL") {
-	      // keep last state
-	    }
-	    const finalNav = nav[nav.length - 1][1];
-	    const ret = +(((finalNav - 100000) / 100000) * 100).toFixed(1);
-	    return {
-	      name: s.name,
-	      code: s.code,
-	      nav,
-	      trades: trades.slice(-10),
-	      trades_count: trades.length,
-	      ret,
-	      final_nav: finalNav,
-	      holding: pos,
-	    };
-	  });
-	}
+		  const stocks = [
+		    { name: "贵州茅台", code: "600519" },
+		    { name: "宁德时代", code: "300750" },
+		    { name: "药明康德", code: "603259" },
+		  ];
+		  const strategyLabels = ["MA双均线", "MACD", "海龟突破"];
+		  const basePrices = [1680, 210, 62];
 
+		  return stocks.map((s, idx) => {
+		    const basePrice = basePrices[idx];
+
+		    function genStrategy(label, seed) {
+		      const nav = [];
+		      let cash = 100000, shares = 0, navVal = 100000;
+		      const trades = [];
+		      const start = new Date(2024, 0, 1);
+		      const end = new Date(2026, 7, 10);
+		      let pos = false;
+		      // 不同策略不同交易频率
+		      const buyProb = label === "MA双均线" ? 0.07 : label === "MACD" ? 0.10 : 0.06;
+		      const sellProb = label === "MA双均线" ? 0.07 : label === "MACD" ? 0.09 : 0.05;
+		      const driftBase = (seed * 0.28 - 0.42) * 0.03;
+
+		      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 7)) {
+		        const ds = d.toISOString().slice(0, 10);
+		        const r = (Math.random() - 0.48) * 0.06 + driftBase;
+		        const price = basePrice * (1 + r);
+		        if (!pos && Math.random() < buyProb) {
+		          const buyPrice = basePrice * (1 + r * 0.5);
+		          shares = Math.floor(cash * 0.95 / buyPrice / 100) * 100;
+		          const cost = shares * buyPrice * 1.00125;
+		          if (shares > 0 && cost <= cash) {
+		            cash -= cost;
+		            pos = true;
+		            trades.push({ date: ds, action: "BUY", price: +buyPrice.toFixed(2), shares });
+		          }
+		        } else if (pos && Math.random() < sellProb) {
+		          const sellPrice = basePrice * (1 + r * 0.5);
+		          const proceeds = shares * sellPrice * 0.99875;
+		          cash += proceeds;
+		          trades.push({ date: ds, action: "SELL", price: +sellPrice.toFixed(2), shares });
+		          shares = 0;
+		          pos = false;
+		        }
+		        navVal = cash + shares * basePrice * (1 + r);
+		        nav.push([ds, +navVal.toFixed(0)]);
+		      }
+		      const finalNav = nav[nav.length - 1][1];
+		      const ret = +(((finalNav - 100000) / 100000) * 100).toFixed(1);
+		      return {
+		        strategy_label: label,
+		        ret,
+		        trades_count: trades.length,
+		        nav,
+		        trades: trades.slice(-10),
+		        final_nav: finalNav,
+		        holding: pos,
+		      };
+		    }
+
+		    return {
+		      name: s.name,
+		      code: s.code,
+		      strategies: strategyLabels.map((l, si) => genStrategy(l, si)),
+		    };
+		  });
+		}
 	function renderPaperCards() {
-	  const grid = document.getElementById("paperGrid");
-	  if (!paperData || !paperData.length) {
-	    grid.innerHTML = '<div class="section-loading">暂无模拟盘数据</div>';
-	    return;
-	  }
-	  grid.innerHTML = paperData.map((d, i) => {
-	    const retCls = d.ret >= 0 ? "positive" : "negative";
-	    const retSign = d.ret >= 0 ? "+" : "";
-	    const holdingCls = d.holding ? "holding" : "empty";
-	    const holdingText = d.holding ? "持仓中" : "空仓";
-	    return '<div class="paper-card" id="paperCard' + i + '" onclick="togglePaperCard(' + i + ')">'
-	      + '<div class="pc-header">'
-	      + '<span class="pc-name">' + d.name + '</span>'
-	      + '<span class="pc-code">' + d.code + '</span>'
-	      + '</div>'
-	      + '<div class="pc-body">'
-	      + '<div class="pc-nav-group">'
-	      + '<span class="pc-nav-label">最终净值</span>'
-	      + '<span class="pc-nav-value">¥' + (d.final_nav || 0).toLocaleString() + '</span>'
-	      + '</div>'
-	      + '<span class="pc-ret ' + retCls + '">' + retSign + d.ret + '%</span>'
-	      + '</div>'
-	      + '<div class="pc-meta">'
-	      + '<span class="pc-trades-count">交易 <span>' + (d.trades_count || 0) + '</span> 次</span>'
-	      + '<span class="pc-holding-badge ' + holdingCls + '">' + holdingText + '</span>'
-	      + '</div>'
-	      + '<div class="pc-expand-hint">点击查看净值曲线 &amp; 交易记录</div>'
-	      + '<div class="paper-detail" id="paperDetail' + i + '">'
-	      + '<div class="paper-detail-grid">'
-	      + '<div class="paper-chart-container" id="paperChart' + i + '"></div>'
-	      + '<div class="paper-trades-panel">'
-	      + '<div class="pt-title">最近 5 笔交易</div>'
-	      + '<div id="paperTrades' + i + '"></div>'
-	      + '</div>'
-	      + '</div>'
-	      + '</div>'
-	      + '</div>';
-	  }).join("");
-	}
+		  const grid = document.getElementById("paperGrid");
+		  if (!paperData || !paperData.length) {
+		    grid.innerHTML = '<div class="section-loading">暂无模拟盘数据</div>';
+		    return;
+		  }
+		  const labelClsMap = { "MA双均线": "ma", "MACD": "macd", "海龟突破": "trtl" };
 
+		  grid.innerHTML = paperData.map((d, i) => {
+		    const stratRows = (d.strategies || []).map(s => {
+		      const retCls = s.ret >= 0 ? "positive" : "negative";
+		      const retSign = s.ret >= 0 ? "+" : "";
+		      const holdingCls = s.holding ? "holding" : "empty";
+		      const holdingText = s.holding ? "持仓" : "空仓";
+		      const labelCls = labelClsMap[s.strategy_label] || "";
+		      return '<div class="pc-strat-row">'
+		        + '<span class="pc-strat-label ' + labelCls + '">' + s.strategy_label + '</span>'
+		        + '<span class="pc-strat-ret ' + retCls + '">' + retSign + s.ret + '%</span>'
+		        + '<div class="pc-strat-meta">'
+		        + '<span class="ps-trades">交易 <span>' + (s.trades_count || 0) + '</span> 次</span>'
+		        + '<span class="pc-holding-badge ' + holdingCls + '">' + holdingText + '</span>'
+		        + '</div>'
+		        + '</div>';
+		    }).join("");
+
+		    return '<div class="paper-card" id="paperCard' + i + '" onclick="togglePaperCard(' + i + ')">'
+		      + '<div class="pc-header">'
+		      + '<span class="pc-name">' + d.name + '</span>'
+		      + '<span class="pc-code">' + d.code + '</span>'
+		      + '</div>'
+		      + '<div class="pc-strategies">'
+		      + stratRows
+		      + '</div>'
+		      + '<div class="pc-expand-hint">点击查看净值曲线 &amp; 交易记录</div>'
+		      + '<div class="paper-detail" id="paperDetail' + i + '">'
+		      + '<div class="paper-detail-grid">'
+		      + '<div class="paper-chart-container" id="paperChart' + i + '"></div>'
+		      + '<div class="paper-trades-panel" id="paperTradesPanel' + i + '"></div>'
+		      + '</div>'
+		      + '</div>'
+		      + '</div>';
+		  }).join("");
+		}
 	function togglePaperCard(idx) {
 	  const card = document.getElementById("paperCard" + idx);
 	  if (!card) return;
@@ -3518,113 +3660,133 @@ function renderRisk(data) {
 	}
 
 	function renderPaperDetail(idx) {
-	  const d = paperData[idx];
-	  if (!d) return;
+		  const d = paperData[idx];
+		  if (!d) return;
 
-	  // 渲染交易记录
-	  const tradesEl = document.getElementById("paperTrades" + idx);
-	  const recentTrades = (d.trades || []).slice(-5).reverse();
-	  if (recentTrades.length === 0) {
-	    tradesEl.innerHTML = '<div class="pt-empty">暂无交易记录</div>';
-	  } else {
-	    tradesEl.innerHTML = recentTrades.map(t => {
-	      const actCls = t.action === "BUY" ? "buy" : "sell";
-	      return '<div class="pt-trade-row">'
-	        + '<span class="pt-trade-date">' + (t.date || "") + '</span>'
-	        + '<span class="pt-trade-action ' + actCls + '">' + t.action + '</span>'
-	        + '<span class="pt-trade-price">¥' + (t.price || 0) + '</span>'
-	        + '<span class="pt-trade-shares">' + (t.shares || 0) + '股</span>'
-	        + '</div>';
-	    }).join("");
-	  }
+		  const strategies = d.strategies || [];
+		  const strategyColors = ['#ff8c42', '#3b82f6', '#a78bfa'];
+		  const labelClsMap = { "MA双均线": "ma", "MACD": "macd", "海龟突破": "trtl" };
 
-	  // 渲染净值曲线
-	  const chartDom = document.getElementById("paperChart" + idx);
-	  if (!chartDom) return;
+		  // ── 渲染各策略交易记录 ──
+		  const panelEl = document.getElementById("paperTradesPanel" + idx);
+		  if (panelEl) {
+		    let html = '<div class="pt-title">最近交易记录</div>';
+		    strategies.forEach((s, si) => {
+		      const color = strategyColors[si] || '#8b949e';
+		      const recentTrades = (s.trades || []).slice(-3).reverse();
+		      const labelCls = labelClsMap[s.strategy_label] || "";
+		      html += '<div class="pt-strat-section">';
+		      html += '<span class="pt-strat-label ' + labelCls + '" style="background:rgba('
+		        + (si === 0 ? '255,140,66' : si === 1 ? '59,130,246' : '168,123,250')
+		        + ',0.12);color:' + color + '">' + s.strategy_label + '</span>';
+		      if (recentTrades.length === 0) {
+		        html += '<div class="pt-empty">暂无交易</div>';
+		      } else {
+		        recentTrades.forEach(t => {
+		          const actCls = t.action === "BUY" ? "buy" : "sell";
+		          html += '<div class="pt-trade-row">'
+		            + '<span class="pt-trade-date">' + (t.date || "") + '</span>'
+		            + '<span class="pt-trade-action ' + actCls + '">' + t.action + '</span>'
+		            + '<span class="pt-trade-price">¥' + (t.price || 0) + '</span>'
+		            + '<span class="pt-trade-shares">' + (t.shares || 0) + '股</span>'
+		            + '</div>';
+		        });
+		      }
+		      html += '</div>';
+		    });
+		    panelEl.innerHTML = html;
+		  }
 
-	  if (paperCharts[idx]) paperCharts[idx].dispose();
-	  const chart = echarts.init(chartDom, null, { devicePixelRatio: window.devicePixelRatio || 1 });
-	  paperCharts[idx] = chart;
+		  // ── 渲染多策略净值曲线（叠加） ──
+		  const chartDom = document.getElementById("paperChart" + idx);
+		  if (!chartDom) return;
 
-	  const navData = d.nav || [];
-	  const dates = navData.map(p => p[0]);
-	  const values = navData.map(p => p[1]);
+		  if (paperCharts[idx]) paperCharts[idx].dispose();
+		  const chart = echarts.init(chartDom, null, { devicePixelRatio: window.devicePixelRatio || 1 });
+		  paperCharts[idx] = chart;
 
-	  const option = {
-	    backgroundColor: "transparent",
-	    grid: {
-	      left: "10%",
-	      right: "6%",
-	      top: "8%",
-	      bottom: "10%",
-	    },
-	    xAxis: {
-	      type: "category",
-	      data: dates,
-	      axisLine: { lineStyle: { color: "#30363d" } },
-	      axisTick: { show: false },
-	      axisLabel: {
-	        color: "#8b949e",
-	        fontSize: 10,
-	        interval: Math.max(Math.floor(dates.length / 8), 1),
-	      },
-	      splitLine: { show: false },
-	    },
-	    yAxis: {
-	      type: "value",
-	      scale: true,
-	      splitNumber: 5,
-	      axisLine: { show: false },
-	      axisTick: { show: false },
-	      axisLabel: {
-	        color: "#8b949e",
-	        fontSize: 10,
-	        formatter: function(v) { return "¥" + (v / 10000).toFixed(1) + "万"; },
-	      },
-	      splitLine: { lineStyle: { color: "#21262d", type: "dashed" } },
-	    },
-	    tooltip: {
-	      trigger: "axis",
-	      backgroundColor: "#161b22",
-	      borderColor: "#30363d",
-	      textStyle: { color: "#e6edf3", fontSize: 12 },
-	      formatter: function(params) {
-	        const p = params[0];
-	        return '<div style="font-weight:600;margin-bottom:4px">' + p.axisValue + '</div>'
-	          + '净值：<b>¥' + Number(p.data).toLocaleString() + '</b>';
-	      },
-	    },
-	    series: [
-	      {
-	        name: "模拟净值",
-	        type: "line",
-	        data: values,
-	        smooth: true,
-	        symbol: "none",
-	        lineStyle: {
-	          color: "#22d3ee",
-	          width: 2.5,
-	          shadowBlur: 12,
-	          shadowColor: "rgba(34,211,238,0.5)",
-	        },
-	        itemStyle: { color: "#22d3ee" },
-	        areaStyle: {
-	          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-	            { offset: 0, color: "rgba(34,211,238,0.18)" },
-	            { offset: 1, color: "rgba(34,211,238,0.01)" },
-	          ]),
-	        },
-	      },
-	    ],
-	  };
+		  // 收集所有日期（并集），对齐各策略净值
+		  const allDatesSet = new Set();
+		  strategies.forEach(s => (s.nav || []).forEach(p => allDatesSet.add(p[0])));
+		  const dates = [...allDatesSet].sort();
+		  if (!dates.length) return;
 
-	  chart.setOption(option, true);
-	  // 响应式 resize
-	  window.addEventListener("resize", () => {
-	    if (paperCharts[idx]) paperCharts[idx].resize();
-	  });
-	}
+		  const series = strategies.map((s, si) => {
+		    const navMap = new Map((s.nav || []).map(p => [p[0], p[1]]));
+		    const values = dates.map(d => {
+		      const v = navMap.get(d);
+		      return v != null ? v : null;
+		    });
+		    return {
+		      name: s.strategy_label,
+		      type: 'line',
+		      data: values,
+		      smooth: true,
+		      symbol: 'none',
+		      lineStyle: {
+		        color: strategyColors[si],
+		        width: 2.2,
+		        shadowBlur: 10,
+		        shadowColor: strategyColors[si].replace(')', ',0.45)').replace('rgb', 'rgba'),
+		      },
+		      itemStyle: { color: strategyColors[si] },
+		      emphasis: {
+		        lineStyle: { shadowBlur: 16, shadowColor: strategyColors[si] },
+		      },
+		    };
+		  });
 
+		  const option = {
+		    backgroundColor: "transparent",
+		    grid: { left: "10%", right: "6%", top: "10%", bottom: "12%" },
+		    xAxis: {
+		      type: "category",
+		      data: dates,
+		      axisLine: { lineStyle: { color: "#30363d" } },
+		      axisTick: { show: false },
+		      axisLabel: {
+		        color: "#8b949e", fontSize: 10,
+		        interval: Math.max(Math.floor(dates.length / 8), 1),
+		      },
+		      splitLine: { show: false },
+		    },
+		    yAxis: {
+		      type: "value", scale: true, splitNumber: 5,
+		      axisLine: { show: false }, axisTick: { show: false },
+		      axisLabel: {
+		        color: "#8b949e", fontSize: 10,
+		        formatter: function(v) { return "¥" + (v / 10000).toFixed(1) + "万"; },
+		      },
+		      splitLine: { lineStyle: { color: "#21262d", type: "dashed" } },
+		    },
+		    tooltip: {
+		      trigger: "axis",
+		      backgroundColor: "#161b22",
+		      borderColor: "#30363d",
+		      textStyle: { color: "#e6edf3", fontSize: 12 },
+		      formatter: function(params) {
+		        let html = '<div style="font-weight:600;margin-bottom:4px">' + params[0].axisValue + '</div>';
+		        params.forEach(p => {
+		          html += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + p.color + ';margin-right:6px;"></span>';
+		          html += p.seriesName + '：<b>¥' + (p.data != null ? Number(p.data).toLocaleString() : '--') + '</b><br/>';
+		        });
+		        return html;
+		      },
+		    },
+		    legend: {
+		      bottom: 0,
+		      textStyle: { color: "#8b949e", fontSize: 11 },
+		      itemGap: 20,
+		      itemWidth: 14, itemHeight: 10,
+		    },
+		    series: series,
+		  };
+
+		  chart.setOption(option, true);
+		  window.addEventListener("resize", () => {
+		    if (paperCharts[idx]) paperCharts[idx].resize();
+		  });
+		}
 // ── 预测战绩 ──
 async function loadVerify() {
   const el = document.getElementById('verifyContent');
@@ -3733,6 +3895,283 @@ function renderVerify(data) {
   el.innerHTML = html;
 }
 
+// ── 预测历史图表 ──
+let predictTimelineChart = null;
+let accuracyTrendChart = null;
+
+async function loadPredictHistory() {
+  try {
+    const resp = await fetch('/api/predict_history');
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    renderPredictHistory(data);
+  } catch {
+    renderPredictHistory(generateMockPredictHistory());
+  }
+}
+
+function generateMockPredictHistory() {
+  const codes = ['600519', '300750', '002594', '000858'];
+  const dirs = ['up', 'down', 'neutral'];
+  const history = [];
+  const now = new Date();
+  for (let i = 30; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    if (d.getDay() === 0 || d.getDay() === 6) continue;
+    const dd = d.toISOString().slice(0, 10);
+    const dir = dirs[Math.floor(Math.random() * dirs.length)];
+    const conf = Math.floor(Math.random() * 30 + 65);
+    const verified = i > 3;
+    const actual = verified ? (Math.random() < 0.6 ? dir : dirs[Math.floor(Math.random() * dirs.length)]) : null;
+    const correct = verified ? (dir === actual) : null;
+    history.push({ date: dd, code: codes[i % 4], direction: dir, confidence: conf, actual, correct });
+  }
+  return { history };
+}
+
+function showPredictHistoryEmpty() {
+  const emptyEl = document.getElementById('phEmptyState');
+  const gridEl = document.getElementById('phChartGrid');
+  if (emptyEl) emptyEl.style.display = 'flex';
+  if (gridEl) gridEl.style.display = 'none';
+}
+
+function hidePredictHistoryEmpty() {
+  const emptyEl = document.getElementById('phEmptyState');
+  const gridEl = document.getElementById('phChartGrid');
+  if (emptyEl) emptyEl.style.display = 'none';
+  if (gridEl) gridEl.style.display = 'grid';
+}
+
+function renderPredictHistory(data) {
+  if (!data || !data.history || !data.history.length) {
+    showPredictHistoryEmpty();
+    return;
+  }
+
+  hidePredictHistoryEmpty();
+
+  // 按日期排序
+  const history = [...data.history].sort((a, b) => a.date.localeCompare(b.date));
+
+  renderTimelineChart(history);
+  renderAccuracyChart(history);
+}
+
+function renderTimelineChart(history) {
+  const dom = document.getElementById('predictTimelineChart');
+  if (!dom) return;
+
+  if (!predictTimelineChart) {
+    predictTimelineChart = echarts.init(dom, null, { devicePixelRatio: window.devicePixelRatio || 1 });
+  }
+
+  const dates = history.map(h => h.date);
+  const dirColors = { up: '#ef4444', down: '#22c55e', neutral: '#8b949e' };
+  const dirNames = { up: '看多', down: '看跌', neutral: '观望' };
+
+  const unverifiedByDir = { up: [], down: [], neutral: [] };
+  const correctByDir = { up: [], down: [], neutral: [] };
+  const wrongByDir = { up: [], down: [], neutral: [] };
+
+  history.forEach((h) => {
+    const isVerified = h.correct !== null && h.correct !== undefined;
+    const point = { value: [h.date, h.confidence], date: h.date, code: h.code, confidence: h.confidence, direction: h.direction, correct: h.correct, actual: h.actual };
+    if (!isVerified) {
+      unverifiedByDir[h.direction].push(point);
+    } else if (h.correct === true || h.correct === 1 || h.correct === '1') {
+      correctByDir[h.direction].push(point);
+    } else {
+      wrongByDir[h.direction].push(point);
+    }
+  });
+
+  const series = [];
+
+  // 置信度折线（淡色虚线背景）
+  series.push({
+    name: '置信度',
+    type: 'line',
+    data: history.map(h => [h.date, h.confidence]),
+    smooth: false,
+    symbol: 'none',
+    lineStyle: { color: 'rgba(168,123,250,0.3)', width: 1, type: 'dashed' },
+    z: 1,
+    tooltip: { show: false },
+  });
+
+  // 未验证散点（空心圆，带边框）
+  ['up', 'down', 'neutral'].forEach(dir => {
+    if (!unverifiedByDir[dir].length) return;
+    series.push({
+      name: dirNames[dir] + ' (待验证)',
+      type: 'scatter',
+      data: unverifiedByDir[dir],
+      symbol: 'circle',
+      symbolSize: 8,
+      z: 2,
+      itemStyle: { color: 'transparent', borderColor: dirColors[dir], borderWidth: 2, opacity: 0.7 },
+      emphasis: { scale: 1.3, itemStyle: { opacity: 1 } },
+      tooltip: { formatter: function(p) { return '<b>' + p.data.date + '</b><br/>代码：' + p.data.code + '<br/>方向：' + dirNames[p.data.direction] + '<br/>置信度：' + p.data.confidence + '%<br/><span style="color:#8b949e">⏳ 待验证</span>'; } },
+    });
+  });
+
+  // 已验证正确（实心圆，发光）
+  ['up', 'down', 'neutral'].forEach(dir => {
+    if (!correctByDir[dir].length) return;
+    series.push({
+      name: dirNames[dir] + ' (✅ 正确)',
+      type: 'scatter',
+      data: correctByDir[dir],
+      symbol: 'circle',
+      symbolSize: 12,
+      z: 3,
+      itemStyle: { color: dirColors[dir], borderColor: dirColors[dir], borderWidth: 1, opacity: 0.9, shadowBlur: 6, shadowColor: dirColors[dir] },
+      emphasis: { scale: 1.4 },
+      tooltip: { formatter: function(p) { return '<b>' + p.data.date + '</b><br/>代码：' + p.data.code + '<br/>方向：' + dirNames[p.data.direction] + '<br/>置信度：' + p.data.confidence + '%<br/>实际：' + (dirNames[p.data.actual] || p.data.actual) + '<br/><span style="color:#3fb950;font-weight:700">✅ 预测正确</span>'; } },
+    });
+  });
+
+  // 已验证错误（菱形，红色边框）
+  ['up', 'down', 'neutral'].forEach(dir => {
+    if (!wrongByDir[dir].length) return;
+    series.push({
+      name: dirNames[dir] + ' (❌ 错误)',
+      type: 'scatter',
+      data: wrongByDir[dir],
+      symbol: 'diamond',
+      symbolSize: 14,
+      z: 3,
+      itemStyle: { color: dirColors[dir], borderColor: '#f85149', borderWidth: 2, opacity: 0.85 },
+      emphasis: { scale: 1.4 },
+      tooltip: { formatter: function(p) { return '<b>' + p.data.date + '</b><br/>代码：' + p.data.code + '<br/>方向：' + dirNames[p.data.direction] + '<br/>置信度：' + p.data.confidence + '%<br/>实际：' + (dirNames[p.data.actual] || p.data.actual) + '<br/><span style="color:#f85149;font-weight:700">❌ 预测错误</span>'; } },
+    });
+  });
+
+  const option = {
+    backgroundColor: 'transparent',
+    grid: { left: '8%', right: '6%', top: '10%', bottom: '12%' },
+    xAxis: {
+      type: 'category',
+      data: dates,
+      axisLine: { lineStyle: { color: '#30363d' } },
+      axisTick: { show: false },
+      axisLabel: { color: '#8b949e', fontSize: 10, interval: Math.max(Math.floor(dates.length / 8), 1), rotate: dates.length > 15 ? 30 : 0 },
+      splitLine: { show: false },
+    },
+    yAxis: {
+      type: 'value',
+      name: '置信度 (%)',
+      nameTextStyle: { color: '#8b949e', fontSize: 11 },
+      min: 0, max: 100,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: '#8b949e', fontSize: 10 },
+      splitLine: { lineStyle: { color: '#21262d', type: 'dashed' } },
+    },
+    legend: { bottom: 0, textStyle: { color: '#8b949e', fontSize: 11 }, itemGap: 14, itemWidth: 12, itemHeight: 12 },
+    tooltip: { trigger: 'item', backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3', fontSize: 12 }, extraCssText: 'line-height:1.6' },
+    series: series.filter(s => s.name && s.data && s.data.length > 0),
+  };
+
+  predictTimelineChart.setOption(option, true);
+}
+
+function renderAccuracyChart(history) {
+  const dom = document.getElementById('accuracyTrendChart');
+  if (!dom) return;
+
+  if (!accuracyTrendChart) {
+    accuracyTrendChart = echarts.init(dom, null, { devicePixelRatio: window.devicePixelRatio || 1 });
+  }
+
+  const verified = history.filter(h => h.correct !== null && h.correct !== undefined);
+  if (!verified.length) {
+    accuracyTrendChart.setOption({
+      title: { text: '暂无已验证数据', left: 'center', top: 'center', textStyle: { color: '#8b949e', fontSize: 14 } },
+    }, true);
+    return;
+  }
+
+  const sorted = [...verified].sort((a, b) => a.date.localeCompare(b.date));
+  const accData = [];
+  let correctCount = 0;
+  sorted.forEach((h, i) => {
+    if (h.correct === true || h.correct === 1 || h.correct === '1') correctCount++;
+    accData.push({ value: [h.date, +(correctCount / (i + 1) * 100).toFixed(1)], total: i + 1, correct: correctCount });
+  });
+
+  const dates = accData.map(d => d.value[0]);
+
+  const option = {
+    backgroundColor: 'transparent',
+    grid: { left: '8%', right: '6%', top: '8%', bottom: '12%' },
+    xAxis: {
+      type: 'category',
+      data: dates,
+      axisLine: { lineStyle: { color: '#30363d' } },
+      axisTick: { show: false },
+      axisLabel: { color: '#8b949e', fontSize: 10, interval: Math.max(Math.floor(dates.length / 8), 1), rotate: dates.length > 15 ? 30 : 0 },
+      splitLine: { show: false },
+    },
+    yAxis: {
+      type: 'value',
+      name: '准确率 (%)',
+      nameTextStyle: { color: '#8b949e', fontSize: 11 },
+      min: function(value) { return Math.floor(Math.min(value.min, 50) / 10) * 10; },
+      max: 100,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: '#8b949e', fontSize: 10 },
+      splitLine: { lineStyle: { color: '#21262d', type: 'dashed' } },
+    },
+    legend: { bottom: 0, textStyle: { color: '#8b949e', fontSize: 11 } },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#161b22',
+      borderColor: '#30363d',
+      textStyle: { color: '#e6edf3', fontSize: 12 },
+      formatter: function(params) {
+        var p = params[0];
+        if (!p || !p.data) return '';
+        return '<b>' + p.data.value[0] + '</b><br/>累计准确率：<b style="color:#c084fc">' + p.data.value[1] + '%</b><br/>正确：' + p.data.correct + ' / ' + p.data.total;
+      },
+    },
+    series: [
+      {
+        name: '累计准确率',
+        type: 'line',
+        data: accData,
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 6,
+        lineStyle: { color: '#c084fc', width: 2.5, shadowBlur: 12, shadowColor: 'rgba(192,132,252,0.5)' },
+        itemStyle: { color: '#c084fc' },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(192,132,252,0.18)' },
+            { offset: 1, color: 'rgba(192,132,252,0.01)' },
+          ]),
+        },
+        markLine: {
+          silent: true,
+          symbol: 'none',
+          lineStyle: { color: '#f85149', type: 'dashed', width: 1, opacity: 0.5 },
+          data: [{ yAxis: 50, label: { formatter: '50% 随机基准', color: '#8b949e', fontSize: 10 } }],
+        },
+      },
+    ],
+  };
+
+  accuracyTrendChart.setOption(option, true);
+}
+
+// 预测历史图表 resize
+window.addEventListener('resize', function() {
+  if (predictTimelineChart) predictTimelineChart.resize();
+  if (accuracyTrendChart) accuracyTrendChart.resize();
+});
 
 // ── 期货区 ──
 async function loadFutures() {
@@ -4257,6 +4696,7 @@ render();
   loadBacktest();
   loadPaper();
   loadVerify();
+  loadPredictHistory();
   loadFutures();
 })();
 </script>

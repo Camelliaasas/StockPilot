@@ -7,8 +7,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 SLIPPAGE, FEE = 0.001, 0.00025
 
-def replay(code, name, start='20240101', end='20260810', cash=100000):
-    """回放模拟盘：信号→买卖→净值"""
+def replay(code, name, start='20240101', end='20260810', cash=100000, strategy='ma'):
+    """回放模拟盘：策略信号→买卖→净值（支持 ma/macd/turtle）"""
     symbol = ('sh' if code.startswith('6') else 'sz') + code
     try:
         df = ak.stock_zh_a_daily(symbol=symbol, start_date=start, end_date=end, adjust='qfq')
@@ -16,8 +16,22 @@ def replay(code, name, start='20240101', end='20260810', cash=100000):
             return None
         df = df.reset_index(drop=True)
         c = df['close']
-        ma5 = c.rolling(5).mean()
-        ma10 = c.rolling(10).mean()
+        # 策略信号
+        if strategy == 'ma':
+            ma5 = c.rolling(5).mean()
+            ma10 = c.rolling(10).mean()
+            signal = ma5 > ma10
+        elif strategy == 'macd':
+            ema12 = c.ewm(span=12).mean()
+            ema26 = c.ewm(span=26).mean()
+            signal = ema12 > ema26
+        elif strategy == 'turtle':
+            hh20 = df['high'].rolling(20).max().shift(1)
+            signal = c > hh20  # 突破持有——跌破 10 日低卖出
+            ll10 = df['low'].rolling(10).min().shift(1)
+            exit_sig = c < ll10
+        else:
+            return None
         cash_f = float(cash)
         shares = 0
         trades = []
@@ -25,8 +39,15 @@ def replay(code, name, start='20240101', end='20260810', cash=100000):
         for i in range(1, len(df)):
             price = float(c.iloc[i])
             prev = float(c.iloc[i-1])
-            cu = ma5.iloc[i-1] <= ma10.iloc[i-1] and ma5.iloc[i] > ma10.iloc[i]
-            cd = ma5.iloc[i-1] >= ma10.iloc[i-1] and ma5.iloc[i] < ma10.iloc[i]
+            if strategy == 'ma':
+                cu = (not bool(signal.iloc[i-1])) and bool(signal.iloc[i])
+                cd = bool(signal.iloc[i-1]) and (not bool(signal.iloc[i]))
+            elif strategy == 'macd':
+                cu = (not bool(signal.iloc[i-1])) and bool(signal.iloc[i])
+                cd = bool(signal.iloc[i-1]) and (not bool(signal.iloc[i]))
+            else:
+                cu = bool(signal.iloc[i]) and shares == 0
+                cd = bool(exit_sig.iloc[i]) and shares > 0
             if cu and shares == 0:
                 buy = int(cash_f * 0.95 / price / 100) * 100
                 if buy > 0:
@@ -45,11 +66,26 @@ def replay(code, name, start='20240101', end='20260810', cash=100000):
                 nav_pts.append((str(df['date'].iloc[i])[:10], round(nav)))
         final_nav = cash_f + shares * price
         ret = (final_nav / cash - 1) * 100
-        return {'name': name, 'code': code, 'nav': nav_pts, 'trades': trades[-10:],
+        return {'name': name, 'code': code, 'strategy': strategy, 'nav': nav_pts, 'trades': trades[-8:],
                 'trades_count': len(trades), 'ret': round(ret, 1), 'final_nav': round(final_nav),
                 'holding': shares > 0}
     except Exception as e:
         return {'name': name, 'error': str(e)[:40]}
+
+STRATEGIES = [('ma', 'MA双均线'), ('macd', 'MACD'), ('turtle', '海龟突破')]
+
+def replay_multi(code, name):
+    """多策略回放对比"""
+    out = []
+    for key, label in STRATEGIES:
+        try:
+            r = replay(code, name, strategy=key)
+            if r and 'error' not in r:
+                r['strategy_label'] = label
+                out.append(r)
+        except Exception:
+            pass
+    return out
 
 if __name__ == '__main__':
     for code, name in [('600519', '贵州茅台'), ('300750', '宁德时代'), ('603259', '药明康德')]:
