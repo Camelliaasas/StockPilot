@@ -40,12 +40,40 @@ def deep_report(code, name=''):
         news_txt = '\n'.join(f'- {n[:50]}' for n in news[:8])
     except Exception:
         news_txt = '无新闻'
+    # 估值分位（增强）
+    val_txt = ''
+    try:
+        from valuation import valuation
+        v = valuation(code, name)
+        if v.get('pe') is not None:
+            val_txt = f'PE {v["pe"]}（历史 {v["pe_pct"]}% 分位——{v["verdict"]}）'
+    except Exception:
+        pass
+    # 筹码信号（增强）
+    chip_txt = ''
+    try:
+        from chip_signal import chip_signal
+        cr = chip_signal(code, name)
+        chip_txt = cr.get('signal', '') + (' | ' + cr.get('detail', '') if cr.get('detail') else '')
+    except Exception:
+        pass
+    # 宏观环境（增强）
+    macro_txt = ''
+    try:
+        from macro_env import macro_env
+        me = macro_env()
+        macro_txt = '；'.join(me.get('parts', [])) + f" → {me.get('verdict', '')}"
+    except Exception:
+        pass
     # LLM 研报
     prompt = f"""你是机构首席分析师（CFA级）。为【{name}（{code}）】撰写深度研报（800字内）：
 
 ## 数据
 技术面：{tech}
 基本面：{fin}
+估值：{val_txt}
+筹码：{chip_txt}
+宏观环境：{macro_txt}
 今日新闻：
 {news_txt}
 
