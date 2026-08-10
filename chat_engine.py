@@ -257,6 +257,19 @@ def chat(message):
             lines.append(f'  {d.strftime("%m-%d")}（{delta}天后）: {desc}')
         lines.append('💡 数据发布日波动加大——注意仓位')
         return '\n'.join(lines)
+    # 可转债意图
+    if '转债' in message or '可转债' in message:
+        from convertible import convertible
+        r = convertible()
+        if 'error' in r:
+            return f'可转债数据不可用: {r["error"]}'
+        lines = [f"📊 可转债市场（{r['count']} 只）:"]
+        lines.append(f"· 平均涨跌 {r['avg_chg']:+.2f}% | 上涨占比 {r['up_pct']}%")
+        lines.append('\n💎 低价活跃候选（双低——价格<115）:')
+        for c in r['cheap'][:5]:
+            lines.append(f"· {c['name']}: {c['price']}（{c['chg']:+.2f}%）")
+        lines.append('⚠️ 可转债有强赎/违约风险——仅供参考')
+        return '\n'.join(lines)
     # 黄金/外汇意图
     if '黄金' in message or '汇率' in message or '美元' in message:
         from gold_fx import gold_fx
