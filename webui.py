@@ -107,6 +107,64 @@ def api_curve():
             pass
     return jsonify(out)
 
+@app.route('/api/portfolio')
+def api_portfolio():
+    """组合分析（自选 5 只等权）"""
+    import akshare as ak
+    import pandas as pd
+    import numpy as np
+    from decision_card import get_watchlist
+    watch = get_watchlist()[:5]
+    rets = {}
+    for code, name in watch:
+        try:
+            symbol = ('sh' if code.startswith('6') else 'sz') + code
+            df = ak.stock_zh_a_daily(symbol=symbol, start_date='20260101', end_date='20260810', adjust='qfq')
+            if df is not None and len(df) > 20:
+                rets[name] = df.set_index('date')['close'].pct_change().dropna()
+        except Exception:
+            pass
+    if len(rets) < 2:
+        return jsonify({'error': '数据不足'}), 404
+    df = pd.DataFrame(rets).dropna()
+    daily = df.mean(axis=1)
+    annual = (1 + daily).prod() ** (250 / len(daily)) - 1
+    vol = daily.std() * np.sqrt(250)
+    sharpe = annual / vol if vol > 0 else 0
+    corr = df.corr()
+    n = len(corr)
+    avg_corr = (corr.values.sum() - n) / (n * (n - 1)) if n > 1 else 0
+    return jsonify({'annual_ret': round(annual * 100, 1), 'vol': round(vol * 100, 1),
+                    'sharpe': round(sharpe, 2), 'avg_corr': round(avg_corr, 2),
+                    'names': list(rets.keys())})
+
+@app.route('/api/risk')
+def api_risk():
+    """风险预警（自选）"""
+    import akshare as ak
+    import pandas as pd
+    from decision_card import get_watchlist
+    watch = get_watchlist()
+    alerts = []
+    for code, name in watch[:6]:
+        try:
+            symbol = ('sh' if code.startswith('6') else 'sz') + code
+            df = ak.stock_zh_a_daily(symbol=symbol, start_date='20260101', end_date='20260810', adjust='qfq')
+            if df is None or len(df) < 30:
+                continue
+            c = df['close']
+            dd = (c / c.cummax() - 1).min() * 100
+            if dd < -20:
+                alerts.append({'msg': f'⚠️ {name} 区间回撤 {dd:.0f}%——深度回撤'})
+            last = df['close'].pct_change().iloc[-1] * 100
+            if abs(last) > 5:
+                alerts.append({'msg': f'⚡ {name} 今日 {last:+.1f}%——异动'})
+        except Exception:
+            pass
+    if not alerts:
+        alerts.append({'msg': '✅ 无重大风险信号'})
+    return jsonify({'alerts': alerts})
+
 @app.route('/api/macro')
 def api_macro():
     """宏观环境"""

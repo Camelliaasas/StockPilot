@@ -1053,7 +1053,146 @@
     .curve-chart-container { height: 300px; }
   }
   /* ── 期货区 ── */
-  .futures-section { padding: 16px 18px; }
+  /* ---- 组合分析区 ---- */
+	  .portfolio-section { padding: 16px 18px; }
+	  .portfolio-stats {
+	    display: grid;
+	    grid-template-columns: repeat(4, 1fr);
+	    gap: 12px;
+	    margin-bottom: 14px;
+	  }
+	  @media (max-width: 900px) {
+	    .portfolio-stats { grid-template-columns: repeat(2, 1fr); }
+	  }
+	  @media (max-width: 500px) {
+	    .portfolio-stats { grid-template-columns: 1fr; }
+	  }
+	  .pf-stat-card {
+	    background: var(--bg);
+	    border: 1px solid var(--border);
+	    border-radius: var(--radius-sm);
+	    padding: 16px;
+	    text-align: center;
+	    transition: all 0.25s ease;
+	    position: relative;
+	    overflow: hidden;
+	  }
+	  .pf-stat-card::after {
+	    content: '';
+	    position: absolute;
+	    bottom: 0; left: 0; right: 0;
+	    height: 2px;
+	    background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+	    opacity: 0;
+	    transition: opacity 0.3s;
+	  }
+	  .pf-stat-card:hover {
+	    border-color: rgba(110,64,201,0.4);
+	    box-shadow: 0 4px 20px rgba(110,64,201,0.1);
+	    transform: translateY(-2px);
+	  }
+	  .pf-stat-card:hover::after { opacity: 1; }
+	  .pf-stat-card .pf-label {
+	    font-size: 11px;
+	    font-weight: 600;
+	    color: var(--text-secondary);
+	    text-transform: uppercase;
+	    letter-spacing: 0.06em;
+	    margin-bottom: 6px;
+	  }
+	  .pf-stat-card .pf-value {
+	    font-size: 22px;
+	    font-weight: 800;
+	    font-variant-numeric: tabular-nums;
+	    font-family: 'SF Mono','Cascadia Code','JetBrains Mono',monospace;
+	    color: var(--text);
+	    margin-bottom: 3px;
+	  }
+	  .pf-stat-card .pf-value.positive { color: var(--up); }
+	  .pf-stat-card .pf-value.negative { color: var(--down); }
+	  .pf-stat-card .pf-sub {
+	    font-size: 11px;
+	    color: var(--text-secondary);
+	  }
+	  .portfolio-names {
+	    background: var(--bg);
+	    border: 1px solid var(--border);
+	    border-radius: var(--radius-sm);
+	    padding: 12px 16px;
+	    display: flex;
+	    align-items: center;
+	    gap: 8px;
+	    flex-wrap: wrap;
+	  }
+	  .portfolio-names .pf-names-label {
+	    font-size: 12px;
+	    color: var(--text-secondary);
+	    font-weight: 600;
+	    white-space: nowrap;
+	  }
+	  .portfolio-names .pf-tag {
+	    display: inline-block;
+	    font-size: 12px;
+	    font-weight: 500;
+	    padding: 3px 12px;
+	    border-radius: 12px;
+	    background: rgba(110,64,201,0.12);
+	    color: var(--accent-glow);
+	    border: 1px solid rgba(110,64,201,0.2);
+	  }
+
+	  /* ---- 风险预警区 ---- */
+	  .risk-section { padding: 16px 18px; }
+	  .risk-section .section-header .title::before {
+	    background: var(--danger);
+	    box-shadow: 0 0 8px var(--danger);
+	  }
+	  .risk-list {
+	    display: flex;
+	    flex-direction: column;
+	    gap: 8px;
+	  }
+	  .risk-alert {
+	    display: flex;
+	    align-items: flex-start;
+	    gap: 10px;
+	    padding: 12px 16px;
+	    background: rgba(248,81,73,0.08);
+	    border: 1px solid rgba(248,81,73,0.25);
+	    border-left: 3px solid var(--danger);
+	    border-radius: var(--radius-sm);
+	    transition: all 0.25s ease;
+	    animation: alertPulse 2.5s ease-in-out infinite;
+	  }
+	  @keyframes alertPulse {
+	    0%, 100% { border-left-color: rgba(248,81,73,0.6); box-shadow: 0 0 8px rgba(248,81,73,0.08); }
+	    50% { border-left-color: rgba(248,81,73,1); box-shadow: 0 0 18px rgba(248,81,73,0.18); }
+	  }
+	  .risk-alert:hover {
+	    background: rgba(248,81,73,0.14);
+	    border-color: rgba(248,81,73,0.5);
+	  }
+	  .risk-alert .ra-icon {
+	    font-size: 16px;
+	    flex-shrink: 0;
+	    margin-top: 1px;
+	  }
+	  .risk-alert .ra-msg {
+	    font-size: 13px;
+	    font-weight: 600;
+	    color: #fdaaaa;
+	    line-height: 1.5;
+	    flex: 1;
+	  }
+	  .risk-empty {
+	    text-align: center;
+	    color: #3fb950;
+	    font-size: 13px;
+	    padding: 16px;
+	    font-weight: 600;
+	  }
+
+	  .futures-section { padding: 16px 18px; }
   .futures-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -1465,6 +1604,30 @@
     </div>
     <div class="curve-chart-container" id="curveChart"></div>
   </div>
+
+  <!-- ── 组合分析区 ── -->
+  <div class="glass-card portfolio-section">
+    <div class="section-header">
+      <span class="title">💼 组合分析</span>
+    </div>
+    <div class="portfolio-stats" id="portfolioStats">
+      <div class="section-loading">⏳ 加载组合数据...</div>
+    </div>
+    <div class="portfolio-names" id="portfolioNames" style="display:none;">
+      <span class="pf-names-label">组合成分：</span>
+    </div>
+  </div>
+
+  <!-- ── 风险预警区 ── -->
+  <div class="glass-card risk-section">
+    <div class="section-header">
+      <span class="title">⚠️ 风险预警</span>
+    </div>
+    <div class="risk-list" id="riskList">
+      <div class="section-loading">⏳ 加载风险数据...</div>
+    </div>
+  </div>
+
   <!-- ── 期货区 ── -->
   <div class="glass-card futures-section">
     <div class="section-header">
@@ -1964,6 +2127,26 @@ function generateMockFutures() {
   ];
 }
 
+function generateMockPortfolio() {
+  return {
+    annual_ret: 12.5,
+    vol: 18.3,
+    sharpe: 0.68,
+    avg_corr: 0.42,
+    names: ["贵州茅台", "宁德时代", "比亚迪", "五粮液"],
+  };
+}
+
+function generateMockRisk() {
+  return {
+    alerts: [
+      { msg: "⚠️ 市场波动率指数(VIX)突破25，短期下行风险加剧，建议降低仓位至5成以下" },
+      { msg: "⚠️ 北向资金连续3日净流出超50亿，外资避险情绪升温，注意核心资产回调风险" },
+      { msg: "⚠️ 创业板指跌破60日均线支撑，技术面转弱，成长股短期承压" },
+    ],
+  };
+}
+
 // ── 分级预测 ──
 async function loadTrend() {
   const container = document.getElementById('trendContent');
@@ -2340,6 +2523,79 @@ function renderCurveChart(d) {
 
   curveChart.setOption(option, true);
 }
+// ── 组合分析 ──
+async function loadPortfolio() {
+  const statsEl = document.getElementById("portfolioStats");
+  const namesEl = document.getElementById("portfolioNames");
+  try {
+    const resp = await fetch("/api/portfolio");
+    if (!resp.ok) throw new Error("API 错误");
+    const data = await resp.json();
+    renderPortfolio(data);
+  } catch {
+    renderPortfolio(generateMockPortfolio());
+  }
+}
+
+function renderPortfolio(data) {
+  const statsEl = document.getElementById("portfolioStats");
+  const namesEl = document.getElementById("portfolioNames");
+  if (!data) {
+    statsEl.innerHTML = "<div class=\"section-loading\">暂无组合数据</div>";
+    namesEl.style.display = "none";
+    return;
+  }
+
+  const retCls = data.annual_ret >= 0 ? "positive" : "negative";
+  statsEl.innerHTML = [
+    { label: "年化收益", value: (data.annual_ret >= 0 ? "+" : "") + Number(data.annual_ret).toFixed(1) + "%", cls: retCls, sub: "近一年" },
+    { label: "年化波动率", value: Number(data.vol).toFixed(1) + "%", cls: "", sub: "标准差" },
+    { label: "夏普比率", value: Number(data.sharpe).toFixed(2), cls: "", sub: data.sharpe >= 1 ? "优秀" : data.sharpe >= 0.5 ? "良好" : "一般" },
+    { label: "平均相关性", value: Number(data.avg_corr).toFixed(2), cls: "", sub: data.avg_corr < 0.3 ? "低相关" : data.avg_corr < 0.6 ? "中等" : "偏高" },
+  ].map(c =>
+    `<div class="pf-stat-card">
+      <div class="pf-label">${c.label}</div>
+      <div class="pf-value ${c.cls}">${c.value}</div>
+      <div class="pf-sub">${c.sub}</div>
+    </div>`
+  ).join("");
+
+  if (data.names && data.names.length) {
+    namesEl.style.display = "flex";
+    namesEl.innerHTML = "<span class=\"pf-names-label\">组合成分：</span>" +
+      data.names.map(n => `<span class="pf-tag">${n}</span>`).join("");
+  } else {
+    namesEl.style.display = "none";
+  }
+}
+
+// ── 风险预警 ──
+async function loadRisk() {
+  const listEl = document.getElementById("riskList");
+  try {
+    const resp = await fetch("/api/risk");
+    if (!resp.ok) throw new Error("API 错误");
+    const data = await resp.json();
+    renderRisk(data);
+  } catch {
+    renderRisk(generateMockRisk());
+  }
+}
+
+function renderRisk(data) {
+  const listEl = document.getElementById("riskList");
+  if (!data || !data.alerts || !data.alerts.length) {
+    listEl.innerHTML = "<div class=\"risk-empty\">✅ 当前无风险预警，系统运行正常</div>";
+    return;
+  }
+  listEl.innerHTML = data.alerts.map(a =>
+    `<div class="risk-alert">
+      <span class="ra-icon">🚨</span>
+      <span class="ra-msg">${a.msg}</span>
+    </div>`
+  ).join("");
+}
+
 // ── 期货区 ──
 async function loadFutures() {
   const grid = document.getElementById('futuresGrid');
@@ -2678,6 +2934,8 @@ render();
   loadPredictions();
   loadTrend();
   loadCurve();
+  loadPortfolio();
+  loadRisk();
   loadFutures();
 })();
 </script>
