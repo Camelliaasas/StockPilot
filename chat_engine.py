@@ -257,6 +257,20 @@ def chat(message):
             lines.append(f'  {d.strftime("%m-%d")}（{delta}天后）: {desc}')
         lines.append('💡 数据发布日波动加大——注意仓位')
         return '\n'.join(lines)
+    # 形态意图
+    if '形态' in message or '技术面' in message:
+        from pattern_recognition import scan_watchlist
+        results = scan_watchlist()
+        lines = ['🔍 自选股技术形态扫描:']
+        for r in results:
+            if r['patterns']:
+                lines.append(f"\n{r['name']}:")
+                for p in r['patterns']:
+                    lines.append(f"  📌 {p}")
+            else:
+                lines.append(f"\n{r['name']}: 无明显形态")
+        lines.append('⚠️ 形态是概率参考——需结合量价确认')
+        return '\n'.join(lines)
     # 可转债意图
     if '转债' in message or '可转债' in message:
         from convertible import convertible
