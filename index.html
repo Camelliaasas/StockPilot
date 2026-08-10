@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 股票分析看板</title>
+<!-- ECharts CDN -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-hover: #1c2333;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-secondary: #8b949e;
+    --accent: #6e40c9;
+    --accent-glow: #8b5cf6;
+    --accent-blue: #3b82f6;
+    --danger: #f85149;
+    --success: #3fb950;
+    --warning: #d29922;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --up: #ef4444;
+    --down: #22c55e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── 背景光晕 ── */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -30%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 900px;
+    height: 700px;
+    background: radial-gradient(ellipse, rgba(110, 64, 201, 0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -20%;
+    right: -10%;
+    width: 600px;
+    height: 500px;
+    background: radial-gradient(ellipse, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── 主布局 ── */
+  .dashboard {
+    position: relative;
+    z-index: 1;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 20px 24px 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* ── 玻璃卡片基类 ── */
+  .glass-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(12px);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .glass-card:hover {
+    border-color: rgba(110, 64, 201, 0.4);
+    box-shadow: 0 4px 24px rgba(110, 64, 201, 0.1);
+  }
+
+  /* ── 顶部：标题 + 指数概览 ── */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 16px 20px;
+  }
+  .top-bar .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .top-bar .logo-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-blue));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 28px rgba(110, 64, 201, 0.35);
+    flex-shrink: 0;
+  }
+  .top-bar .logo-icon svg { width: 22px; height: 22px; stroke: #fff; }
+  .top-bar h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #e6edf3 0%, #c9d1d9 40%, #8b949e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    white-space: nowrap;
+  }
+
+  .index-strip {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .index-item {
+    text-align: right;
+    min-width: 100px;
+  }
+  .index-item .name {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+  }
+  .index-item .value {
+    font-size: 17px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', monospace;
+  }
+  .index-item .change {
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .index-item .value.up, .index-item .change.up { color: var(--up); }
+  .index-item .value.down, .index-item .change.down { color: var(--down); }
+
+  /* ── 中部：K线图 + 预测卡片 ── */
+  .middle-row {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 18px;
+    min-height: 520px;
+  }
+  @media (max-width: 1100px) {
+    .middle-row { grid-template-columns: 1fr; }
+  }
+
+  /* ── K线图表区 ── */
+  .chart-section {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 18px;
+  }
+  .chart-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .chart-toolbar .stock-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 6px 6px 6px 16px;
+    transition: border-color 0.2s;
+  }
+  .chart-toolbar .stock-input:focus-within { border-color: var(--accent); }
+  .chart-toolbar .stock-input input {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    width: 80px;
+    outline: none;
+    font-family: 'SF Mono', 'Cascadia Code', monospace;
+  }
+  .chart-toolbar .stock-input input::placeholder { color: #484f58; }
+  .chart-toolbar .stock-input .market-tag {
+    font-size: 11px;
+    color: var(--text-secondary);
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--surface-hover);
+  }
+  .chart-toolbar .stock-input button {
+    background: linear-gradient(135deg, var(--accent), var(--accent-blue));
+    border: none;
+    color: #fff;
+    padding: 7px 16px;
+    border-radius: 18px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: opacity 0.2s;
+  }
+  .chart-toolbar .stock-input button:hover { opacity: 0.9; }
+
+  .period-btns {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+  }
+  .period-btns button {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+  .period-btns button:hover { border-color: var(--accent); color: var(--text); }
+  .period-btns button.active {
+    background: rgba(110, 64, 201, 0.2);
+    border-color: var(--accent);
+    color: var(--accent-glow);
+  }
+
+  .chart-container {
+    flex: 1;
+    min-height: 440px;
+    width: 100%;
+  }
+
+  /* ── 预测卡片 ── */
+  .predict-section {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 18px;
+    gap: 12px;
+  }
+  .predict-section .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .predict-section .section-title::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-glow);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  .predict-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    flex: 1;
+    max-height: 420px;
+  }
+  .predict-list::-webkit-scrollbar { width: 4px; }
+  .predict-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .predict-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    transition: all 0.2s;
+  }
+  .predict-item:hover { border-color: var(--accent); }
+  .predict-item .p-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .predict-item .p-code {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .predict-item .p-date {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .predict-item .p-dir {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+  }
+  .predict-item .p-dir.up {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--up);
+  }
+  .predict-item .p-dir.down {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--down);
+  }
+  .predict-item .p-dir.neutral {
+    background: rgba(210, 153, 34, 0.15);
+    color: var(--warning);
+  }
+  .predict-item .p-confidence {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  .predict-item .p-reason {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .predict-empty {
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-align: center;
+    padding: 40px 20px;
+    line-height: 1.6;
+  }
+
+  /* ── 底部：板块热力 + 分级预测 ── */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 900px) {
+    .bottom-row { grid-template-columns: 1fr; }
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .section-header .title {
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-header .title::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    box-shadow: 0 0 8px var(--accent-blue);
+  }
+
+  /* ── 板块热力 ── */
+  .board-section { padding: 16px 18px; }
+  .board-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .board-row {
+    display: grid;
+    grid-template-columns: 24px 1fr auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    transition: background 0.15s;
+    cursor: default;
+  }
+  .board-row:hover { background: var(--surface-hover); }
+  .board-row .rank {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+  .board-row:nth-child(-n+3) .rank { color: var(--warning); }
+  .board-row .b-name {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .board-row .b-change {
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono', 'Cascadia Code', monospace;
+  }
+  .board-row .b-amount {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono', 'Cascadia Code', monospace;
+  }
+  .board-row .b-change.up { color: var(--up); }
+  .board-row .b-change.down { color: var(--down); }
+  .board-loading {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    padding: 30px;
+  }
+
+  /* ── 分级预测 ── */
+  .trend-section { padding: 16px 18px; }
+  .trend-block {
+    margin-bottom: 14px;
+  }
+  .trend-block:last-child { margin-bottom: 0; }
+  .trend-block .t-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-glow);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .trend-block .t-label .badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(139, 92, 246, 0.2);
+    color: var(--accent-glow);
+  }
+  .trend-block .t-content {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+  .trend-block .t-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .trend-block .t-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .trend-block .t-item .t-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .trend-block .t-item .t-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .trend-block .t-summary {
+    background: rgba(110, 64, 201, 0.08);
+    border: 1px solid rgba(110, 64, 201, 0.25);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .trend-loading {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    padding: 30px;
+  }
+
+  /* ── 免责声明 ── */
+  .footer-disclaimer {
+    text-align: center;
+    padding: 8px 0 0;
+    font-size: 12px;
+    color: #484f58;
+  }
+
+  /* ═══════════ 以下为聊天框 CSS（保留，不修改） ═══════════ */
+
+  /* ── 右侧悬浮聊天框 ── */
+  .chat-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 100;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-blue));
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 28px rgba(110, 64, 201, 0.5);
+    transition: all 0.3s ease;
+  }
+  .chat-fab:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 36px rgba(110, 64, 201, 0.65);
+  }
+  .chat-fab svg { width: 24px; height: 24px; stroke: #fff; fill: none; stroke-width: 2; }
+
+  .chat-panel {
+    position: fixed;
+    bottom: 96px;
+    right: 24px;
+    z-index: 99;
+    width: 400px;
+    max-width: calc(100vw - 48px);
+    height: 560px;
+    max-height: calc(100vh - 140px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 12px 60px rgba(0,0,0,0.5), 0 0 40px rgba(110, 64, 201, 0.08);
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .chat-panel.open {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .chat-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .chat-header .name {
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chat-header .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3fb950;
+    box-shadow: 0 0 8px #3fb950;
+  }
+  .chat-header button {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .chat-header button:hover { color: var(--text); border-color: #555; }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .msg {
+    max-width: 82%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    word-break: break-word;
+    animation: msgIn 0.3s ease;
+  }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .msg.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--accent), #5b3fb0);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .msg.ai {
+    align-self: flex-start;
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+  }
+  .msg.ai .thinking {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+  .msg.ai .thinking .dots { display: flex; gap: 3px; }
+  .msg.ai .thinking .dots span {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent-glow);
+    animation: bounce 1.2s infinite ease-in-out;
+  }
+  .msg.ai .thinking .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .msg.ai .thinking .dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+
+  .chat-input-area {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .chat-input-area input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 10px 16px;
+    color: var(--text);
+    font-size: 13.5px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .chat-input-area input:focus { border-color: var(--accent); }
+  .chat-input-area input::placeholder { color: #484f58; }
+
+  .chat-input-area button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent-blue));
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .chat-input-area button:hover { opacity: 0.9; transform: scale(1.04); }
+  .chat-input-area button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .chat-input-area button svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2; }
+
+  .chat-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  .chat-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 16px 8px;
+  }
+  .chat-actions button {
+    font-size: 11.5px;
+    padding: 5px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .chat-actions button:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--surface-hover);
+  }
+
+  /* ── 响应式 ── */
+  @media (max-width: 520px) {
+    .chat-panel {
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      max-width: 100%;
+      height: 100vh;
+      max-height: 100vh;
+      border-radius: 0;
+      transform: translateY(100%);
+    }
+    .chat-panel.open { transform: translateY(0); }
+    .chat-fab { bottom: 16px; right: 16px; }
+  }
+
+  @media (max-width: 768px) {
+    .dashboard { padding: 12px 10px 90px; }
+    .top-bar { flex-direction: column; align-items: flex-start; }
+    .index-strip { width: 100%; justify-content: space-between; }
+    .index-item { text-align: left; min-width: auto; }
+    .chart-toolbar { flex-wrap: wrap; }
+    .period-btns { margin-left: 0; }
+    .middle-row { min-height: auto; }
+    .chart-container { min-height: 340px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ 看板主体 ═══════════ -->
+<div class="dashboard">
+
+  <!-- ── 顶部：标题 + 指数概览 ── -->
+  <div class="glass-card top-bar">
+    <div class="brand">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <h1>AI 股票分析看板</h1>
+    </div>
+    <div class="index-strip" id="indexStrip">
+      <div class="index-item">
+        <div class="name">上证指数</div>
+        <div class="value" id="idxSH">----.--</div>
+        <div class="change" id="idxSHChg">--</div>
+      </div>
+      <div class="index-item">
+        <div class="name">深证成指</div>
+        <div class="value" id="idxSZ">----.--</div>
+        <div class="change" id="idxSZChg">--</div>
+      </div>
+      <div class="index-item">
+        <div class="name">创业板指</div>
+        <div class="value" id="idxCY">----.--</div>
+        <div class="change" id="idxCYChg">--</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 中部：K线图 + 预测卡片 ── -->
+  <div class="middle-row">
+    <!-- K线图表 -->
+    <div class="glass-card chart-section">
+      <div class="chart-toolbar">
+        <div class="stock-input">
+          <span class="market-tag">SH</span>
+          <input id="stockCode" type="text" value="600519" placeholder="股票代码" maxlength="6" autocomplete="off">
+          <button onclick="switchStock()">切换</button>
+        </div>
+        <div class="period-btns">
+          <button data-period="30" onclick="switchPeriod(this, 30)">1月</button>
+          <button data-period="90" onclick="switchPeriod(this, 90)">3月</button>
+          <button data-period="180" class="active" onclick="switchPeriod(this, 180)">半年</button>
+          <button data-period="365" onclick="switchPeriod(this, 365)">1年</button>
+        </div>
+      </div>
+      <div class="chart-container" id="klineChart"></div>
+    </div>
+
+    <!-- 预测卡片 -->
+    <div class="glass-card predict-section">
+      <div class="section-title">最近预测记录</div>
+      <div class="predict-list" id="predictList">
+        <div class="predict-empty">加载中...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 底部：板块热力 + 分级预测 ── -->
+  <div class="bottom-row">
+    <!-- 板块热力 -->
+    <div class="glass-card board-section">
+      <div class="section-header">
+        <span class="title">行业板块涨跌 TOP10</span>
+      </div>
+      <div class="board-list" id="boardList">
+        <div class="board-loading">加载中...</div>
+      </div>
+    </div>
+
+    <!-- 分级预测 -->
+    <div class="glass-card trend-section">
+      <div class="section-header">
+        <span class="title">分级预测区</span>
+      </div>
+      <div id="trendContent">
+        <div class="trend-loading">加载中...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 免责声明 -->
+  <div class="footer-disclaimer">
+    ⚠ 预测结果仅供参考，不构成投资建议。市场有风险，投资需谨慎。
+  </div>
+</div>
+
+<!-- ═══════════ 聊天悬浮框（保留，不修改） ═══════════ -->
+<button class="chat-fab" id="chatFab" onclick="toggleChat()" title="AI 金融助手">
+  <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+</button>
+
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-header">
+    <span class="name">
+      <span class="dot"></span>
+      AI 金融分析师
+    </span>
+    <button onclick="toggleChat()" title="收起">✕</button>
+  </div>
+
+  <div class="chat-messages" id="chatMessages"></div>
+
+  <div class="chat-actions" id="chatQuickActions">
+    <button onclick="sendQuick('茅台和宁德哪个增长概率大')">🍶 vs 🔋 茅台vs宁德</button>
+    <button onclick="sendQuick('比亚迪最近怎么样')">🚗 比亚迪近况</button>
+    <button onclick="sendQuick('对比五粮液和茅台')">🍶 五粮液vs茅台</button>
+  </div>
+
+  <div class="chat-input-area">
+    <input
+      id="chatInput"
+      type="text"
+      placeholder="输入股票问题，如：茅台最近走势如何？"
+      autocomplete="off"
+    />
+    <button id="sendBtn" onclick="sendMessage()" title="发送">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// 看板模块 JS
+// ═══════════════════════════════════════════
+
+// ── 指数概览 ──
+async function loadIndexOverview() {
+  try {
+    const resp = await fetch('/api/index');
+    if (!resp.ok) throw new Error('API 未就绪');
+    const data = await resp.json();
+    updateIndexItem('SH', data.sh);
+    updateIndexItem('SZ', data.sz);
+    updateIndexItem('CY', data.cy);
+  } catch {
+    // 后端未部署时显示占位
+    ['SH','SZ','CY'].forEach(k => updateIndexItem(k, null));
+  }
+}
+
+function updateIndexItem(key, item) {
+  const vEl = document.getElementById('idx' + key);
+  const cEl = document.getElementById('idx' + key + 'Chg');
+  if (!item) {
+    vEl.textContent = '----.--';
+    vEl.className = 'value';
+    cEl.textContent = '--';
+    cEl.className = 'change';
+    return;
+  }
+  vEl.textContent = item.price != null ? Number(item.price).toFixed(2) : '----.--';
+  cEl.textContent = item.change != null ? (item.change >= 0 ? '+' : '') + Number(item.change).toFixed(2) + '%' : '--';
+  const dir = item.change >= 0 ? 'up' : 'down';
+  vEl.className = 'value ' + dir;
+  cEl.className = 'change ' + dir;
+}
+
+// ── K线图表 ──
+let klineChart = null;
+let currentStock = '600519';
+let currentPeriod = 180;
+
+function initChart() {
+  const dom = document.getElementById('klineChart');
+  if (!dom) return;
+  klineChart = echarts.init(dom, null, { devicePixelRatio: window.devicePixelRatio || 1 });
+  window.addEventListener('resize', () => klineChart?.resize());
+}
+
+async function loadKline(code, period) {
+  currentStock = code;
+  currentPeriod = period;
+  if (!klineChart) initChart();
+  if (!klineChart) return;
+
+  klineChart.showLoading({ text: '加载K线数据...', color: '#8b5cf6', maskColor: 'rgba(13,17,23,0.75)' });
+
+  try {
+    const resp = await fetch(`/api/kline?code=${code}&period=${period}`);
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    renderKline(data);
+  } catch {
+    // 使用模拟数据展示图表结构
+    renderKline(generateMockKline(period));
+  }
+}
+
+function generateMockKline(days) {
+  const dates = [], open = [], close = [], high = [], low = [], volume = [];
+  let price = 1700 + Math.random() * 200;
+  const now = new Date();
+  for (let i = days; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    // 跳过周末
+    if (d.getDay() === 0 || d.getDay() === 6) continue;
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    dates.push(`${mm}-${dd}`);
+
+    const change = (Math.random() - 0.48) * price * 0.03;
+    const o = price;
+    const c = price + change;
+    const h = Math.max(o, c) + Math.random() * Math.abs(change) * 0.6;
+    const l = Math.min(o, c) - Math.random() * Math.abs(change) * 0.6;
+    open.push(+o.toFixed(2));
+    close.push(+c.toFixed(2));
+    high.push(+h.toFixed(2));
+    low.push(+l.toFixed(2));
+    volume.push(Math.floor(Math.random() * 500000 + 100000));
+    price = c;
+  }
+  // 计算均线
+  const ma = (arr, n) => arr.map((_, i, a) => {
+    if (i < n - 1) return null;
+    const slice = a.slice(i - n + 1, i + 1);
+    return +(slice.reduce((s, v) => s + v, 0) / n).toFixed(2);
+  });
+  return {
+    dates,
+    open,
+    close,
+    high,
+    low,
+    volume,
+    ma5: ma(close, 5),
+    ma20: ma(close, 20),
+    ma60: ma(close, 60),
+  };
+}
+
+function renderKline(data) {
+  if (!klineChart) return;
+  klineChart.hideLoading();
+
+  const upColor = '#ef4444';
+  const downColor = '#22c55e';
+
+  // 构造 ECharts candlestick 数据 [open, close, low, high]
+  const ohlc = data.dates.map((_, i) => [
+    data.open[i],
+    data.close[i],
+    data.low[i],
+    data.high[i],
+  ]);
+
+  const option = {
+    backgroundColor: 'transparent',
+    grid: [
+      { left: '8%', right: '2%', top: '2%', height: '58%' },
+      { left: '8%', right: '2%', top: '68%', height: '22%' },
+    ],
+    xAxis: [
+      {
+        type: 'category',
+        data: data.dates,
+        gridIndex: 0,
+        axisLine: { lineStyle: { color: '#30363d' } },
+        axisTick: { show: false },
+        axisLabel: {
+          color: '#8b949e',
+          fontSize: 10,
+          interval: Math.max(Math.floor(data.dates.length / 8), 1),
+        },
+        splitLine: { show: false },
+      },
+      {
+        type: 'category',
+        data: data.dates,
+        gridIndex: 1,
+        axisLine: { lineStyle: { color: '#30363d' } },
+        axisTick: { show: false },
+        axisLabel: { show: false },
+        splitLine: { show: false },
+      },
+    ],
+    yAxis: [
+      {
+        type: 'value',
+        gridIndex: 0,
+        scale: true,
+        splitNumber: 5,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: '#8b949e', fontSize: 10 },
+        splitLine: { lineStyle: { color: '#21262d', type: 'dashed' } },
+        position: 'left',
+      },
+      {
+        type: 'value',
+        gridIndex: 1,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: '#8b949e', fontSize: 10 },
+        splitLine: { lineStyle: { color: '#21262d', type: 'dashed' } },
+      },
+    ],
+    dataZoom: [
+      {
+        type: 'inside',
+        xAxisIndex: [0, 1],
+        start: Math.max(0, 100 - (60 / data.dates.length) * 100),
+        end: 100,
+      },
+    ],
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'cross' },
+      backgroundColor: '#161b22',
+      borderColor: '#30363d',
+      textStyle: { color: '#e6edf3', fontSize: 12 },
+      formatter: function(params) {
+        const k = params.find(p => p.seriesName === 'K线');
+        const ma5 = params.find(p => p.seriesName === 'MA5');
+        const ma20 = params.find(p => p.seriesName === 'MA20');
+        const ma60 = params.find(p => p.seriesName === 'MA60');
+        const vol = params.find(p => p.seriesName === '成交量');
+        let html = `<div style="font-weight:600;margin-bottom:4px">${k.axisValue}</div>`;
+        if (k && k.data) {
+          const [o, c, l, h] = k.data;
+          html += `开: ${o} &nbsp; 收: ${c} &nbsp; 低: ${l} &nbsp; 高: ${h}<br/>`;
+        }
+        if (ma5 && ma5.data != null) html += `<span style="color:#f5a623">MA5: ${ma5.data}</span><br/>`;
+        if (ma20 && ma20.data != null) html += `<span style="color:#d44a8c">MA20: ${ma20.data}</span><br/>`;
+        if (ma60 && ma60.data != null) html += `<span style="color:#506ef5">MA60: ${ma60.data}</span><br/>`;
+        if (vol && vol.data != null) html += `成交量: ${(vol.data / 10000).toFixed(0)}万手`;
+        return html;
+      },
+    },
+    series: [
+      {
+        name: 'K线',
+        type: 'candlestick',
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: ohlc,
+        itemStyle: {
+          color: upColor,
+          color0: downColor,
+          borderColor: upColor,
+          borderColor0: downColor,
+        },
+      },
+      {
+        name: 'MA5',
+        type: 'line',
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: data.ma5,
+        smooth: false,
+        symbol: 'none',
+        lineStyle: { color: '#f5a623', width: 1, type: 'solid' },
+      },
+      {
+        name: 'MA20',
+        type: 'line',
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: data.ma20,
+        smooth: false,
+        symbol: 'none',
+        lineStyle: { color: '#d44a8c', width: 1, type: 'solid' },
+      },
+      {
+        name: 'MA60',
+        type: 'line',
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: data.ma60,
+        smooth: false,
+        symbol: 'none',
+        lineStyle: { color: '#506ef5', width: 1, type: 'solid' },
+      },
+      {
+        name: '成交量',
+        type: 'bar',
+        xAxisIndex: 1,
+        yAxisIndex: 1,
+        data: data.volume.map((v, i) => {
+          const isUp = data.close[i] >= data.open[i];
+          return {
+            value: v,
+            itemStyle: { color: isUp ? upColor : downColor },
+          };
+        }),
+      },
+    ],
+  };
+
+  klineChart.setOption(option, true);
+}
+
+function switchStock() {
+  const input = document.getElementById('stockCode');
+  const code = input.value.trim();
+  if (!code || code.length < 6) { input.focus(); return; }
+  input.value = code;
+  loadKline(code, currentPeriod);
+}
+
+function switchPeriod(btn, period) {
+  document.querySelectorAll('.period-btns button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadKline(currentStock, period);
+}
+
+// 股票代码输入回车切换
+document.getElementById('stockCode')?.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') switchStock();
+});
+
+// ── 板块热力 ──
+async function loadBoards() {
+  const container = document.getElementById('boardList');
+  try {
+    const resp = await fetch('/api/boards');
+    if (!resp.ok) throw new Error('API 错误');
+    const boards = await resp.json();
+    renderBoards(boards);
+  } catch {
+    renderBoards(generateMockBoards());
+  }
+}
+
+function generateMockBoards() {
+  const names = ['半导体', '白酒', '新能源汽车', '光伏', '医药生物', '证券', '银行', '军工', '人工智能', '消费电子'];
+  return names.map((name, i) => ({
+    name,
+    change: (Math.random() * 8 - 3).toFixed(2),
+    amount: (Math.random() * 500 + 50).toFixed(1) + '亿',
+  })).sort((a, b) => Number(b.change) - Number(a.change));
+}
+
+function renderBoards(boards) {
+  const container = document.getElementById('boardList');
+  if (!boards || !boards.length) {
+    container.innerHTML = '<div class="board-loading">暂无板块数据</div>';
+    return;
+  }
+  const top10 = boards.slice(0, 10);
+  container.innerHTML = top10.map((b, i) => {
+    const chg = Number(b.change);
+    const dir = chg >= 0 ? 'up' : 'down';
+    return `
+      <div class="board-row">
+        <span class="rank">${i + 1}</span>
+        <span class="b-name">${b.name}</span>
+        <span class="b-change ${dir}">${chg >= 0 ? '+' : ''}${b.change}%</span>
+        <span class="b-amount">${b.amount}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── 预测卡片 ──
+async function loadPredictions() {
+  const container = document.getElementById('predictList');
+  try {
+    const resp = await fetch('/api/predictions');
+    if (!resp.ok) throw new Error('API 错误');
+    const preds = await resp.json();
+    renderPredictions(preds);
+  } catch {
+    renderPredictions(generateMockPredictions());
+  }
+}
+
+function generateMockPredictions() {
+  const codes = ['600519', '300750', '002594', '000858', '601318'];
+  const directions = ['up', 'down', 'neutral'];
+  const reasons = [
+    '技术面MACD金叉，成交量放大，短期看涨信号明显',
+    '行业政策利好叠加资金持续流入，中期趋势向好',
+    '估值处于历史低位，机构调研频繁，具备反弹基础',
+    '短期涨幅过大，技术指标超买，注意回调风险',
+    '板块轮动节奏加快，资金面偏紧，观望为主',
+  ];
+  return Array.from({ length: 6 }, (_, i) => ({
+    date: new Date(Date.now() - i * 86400000 * 2).toISOString().slice(0, 10),
+    code: codes[i % codes.length],
+    direction: directions[i % directions.length],
+    confidence: Math.floor(Math.random() * 30 + 65),
+    reason: reasons[i % reasons.length],
+  }));
+}
+
+function renderPredictions(preds) {
+  const container = document.getElementById('predictList');
+  if (!preds || !preds.length) {
+    container.innerHTML = '<div class="predict-empty">暂无预测记录<br/>启动后端 API 后自动加载</div>';
+    return;
+  }
+  container.innerHTML = preds.map(p => {
+    const dirLabel = { up: '看涨 ▲', down: '看跌 ▼', neutral: '震荡 ─' };
+    return `
+      <div class="predict-item">
+        <div class="p-head">
+          <span class="p-code">${p.code}</span>
+          <span class="p-date">${p.date}</span>
+        </div>
+        <span class="p-dir ${p.direction}">${dirLabel[p.direction] || p.direction}</span>
+        <div class="p-confidence">置信度：${p.confidence || '--'}%</div>
+        <div class="p-reason">${p.reason || ''}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── 分级预测 ──
+async function loadTrend() {
+  const container = document.getElementById('trendContent');
+  try {
+    const resp = await fetch('/api/trend');
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    renderTrend(data);
+  } catch {
+    renderTrend(generateMockTrend());
+  }
+}
+
+function generateMockTrend() {
+  return {
+    big: [
+      { title: '美联储利率决议', desc: '预计维持利率不变，关注鲍威尔讲话中关于降息节奏的措辞，若偏鸽派将利好全球风险资产，A股核心资产有望受益。区间判断：上证3000-3200点震荡。' },
+      { title: '国内经济数据发布', desc: '下周三季度GDP数据公布，市场预期增速5.2%。若超预期，顺周期板块（银行、基建）或有表现。' },
+    ],
+    mid: [
+      { title: '科技板块轮动', desc: 'AI大模型应用落地加速，算力需求持续增长，半导体设备国产替代逻辑强化。关注中芯国际、寒武纪等标的。' },
+      { title: '消费电子景气回升', desc: '华为/苹果新机发布带动产业链备货，消费电子板块估值修复中。立讯精密、歌尔股份有望受益。' },
+    ],
+    small: {
+      label: '短期板块情绪',
+      items: ['白酒板块节前备货行情启动，茅台批价企稳回升', '新能源汽车销量数据超预期，锂电材料价格反弹', '医药板块集采压力边际减弱，CXO龙头订单回暖'],
+    },
+    summary: {
+      text: '综合判断：短期市场维持震荡偏强格局，科技成长风格占优。大消费板块关注节日效应带来的阶段性机会。建议仓位控制在6-7成，关注量能变化及北向资金流向。',
+    },
+  };
+}
+
+function renderTrend(data) {
+  const container = document.getElementById('trendContent');
+  if (!data) {
+    container.innerHTML = '<div class="trend-loading">暂无趋势数据</div>';
+    return;
+  }
+
+  let html = '';
+
+  // 大事件 → 大区间判断
+  if (data.big && data.big.length) {
+    html += '<div class="trend-block">';
+    html += '<div class="t-label"><span class="badge">大事件</span> 大区间判断</div>';
+    html += '<div class="t-items">';
+    data.big.forEach(item => {
+      html += `<div class="t-item">
+        <div class="t-title">${item.title}</div>
+        <div class="t-desc">${item.desc}</div>
+      </div>`;
+    });
+    html += '</div></div>';
+  }
+
+  // 中等事件
+  if (data.mid && data.mid.length) {
+    html += '<div class="trend-block">';
+    html += '<div class="t-label"><span class="badge">中事件</span> 板块趋势</div>';
+    html += '<div class="t-items">';
+    data.mid.forEach(item => {
+      html += `<div class="t-item">
+        <div class="t-title">${item.title}</div>
+        <div class="t-desc">${item.desc}</div>
+      </div>`;
+    });
+    html += '</div></div>';
+  }
+
+  // 小事件 → 短期板块情绪
+  if (data.small) {
+    html += '<div class="trend-block">';
+    html += '<div class="t-label"><span class="badge">小事件</span> ' + (data.small.label || '短期板块情绪') + '</div>';
+    html += '<div class="t-content">';
+    const items = data.small.items || [];
+    items.forEach(t => { html += `• ${t}<br/>`; });
+    html += '</div></div>';
+  }
+
+  // 综合摘要
+  if (data.summary && data.summary.text) {
+    html += '<div class="trend-block">';
+    html += '<div class="t-label">📋 综合摘要</div>';
+    html += `<div class="t-summary">${data.summary.text}</div>`;
+    html += '</div>';
+  }
+
+  container.innerHTML = html || '<div class="trend-loading">暂无趋势数据</div>';
+}
+
+// ═══════════════════════════════════════════
+// 聊天框 JS（保留，不修改）
+// ═══════════════════════════════════════════
+
+// ── DOM ──
+const panel   = document.getElementById('chatPanel');
+const fab     = document.getElementById('chatFab');
+const list    = document.getElementById('chatMessages');
+const input   = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+const quickActions = document.getElementById('chatQuickActions');
+
+// ── 持久化 key ──
+const LS_KEY = 'stock_ai_chat_history';
+
+// ── 欢迎语 ──
+const WELCOME = '我是金融分析师助手——可以问：两只股票对比/个股分析（茅台/宁德/比亚迪/五粮液/平安/招行/药明康德等）';
+
+// ── 聊天记录 ──
+let messages = loadHistory();
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function saveHistory() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(messages));
+  } catch { /* quota exceeded — 静默 */ }
+}
+
+// ── 渲染 ──
+function render() {
+  list.innerHTML = '';
+
+  if (messages.length === 0) {
+    list.innerHTML = `<div class="chat-empty">${WELCOME}</div>`;
+  } else {
+    messages.forEach((m, i) => {
+      const div = document.createElement('div');
+      div.className = `msg ${m.role}`;
+      div.textContent = m.content;
+      // 最后一条 AI 消息如果是 loading 占位则渲染动画
+      if (m.role === 'ai' && m.loading) {
+        div.innerHTML = '<div class="thinking">分析师思考中<div class="dots"><span></span><span></span><span></span></div></div>';
+      }
+      list.appendChild(div);
+    });
+  }
+
+  list.scrollTop = list.scrollHeight;
+
+  // 有历史消息时隐藏快捷操作区
+  if (quickActions) {
+    quickActions.style.display = messages.length > 0 ? 'none' : 'flex';
+  }
+}
+
+// ── 展开/收起 ──
+function toggleChat() {
+  const open = panel.classList.toggle('open');
+  fab.style.display = open ? 'none' : 'flex';
+  if (open) {
+    render();
+    setTimeout(() => input.focus(), 350);
+  }
+}
+
+// ── 快捷发送 ──
+function sendQuick(text) {
+  // 确保面板打开
+  if (!panel.classList.contains('open')) {
+    toggleChat();
+  }
+  input.value = text;
+  sendMessage();
+}
+
+// ── 发送消息 ──
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text) return;
+
+  // 移除输入内容
+  input.value = '';
+  input.focus();
+
+  // 添加用户消息
+  messages.push({ role: 'user', content: text });
+
+  // 添加 AI loading 占位
+  const loadingIdx = messages.length;
+  messages.push({ role: 'ai', content: '', loading: true });
+  render();
+  setSending(true);
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text }),
+    });
+
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+    }
+
+    const data = await resp.json();
+
+    // 替换 loading 占位为实际回复
+    messages[loadingIdx] = { role: 'ai', content: data.answer || '(空响应)' };
+  } catch (err) {
+    messages[loadingIdx] = { role: 'ai', content: `⚠️ 请求失败：${err.message}，请稍后重试。` };
+  }
+
+  saveHistory();
+  setSending(false);
+  render();
+}
+
+function setSending(disabled) {
+  sendBtn.disabled = disabled;
+  input.disabled = disabled;
+  if (!disabled) input.focus();
+}
+
+// ── 事件绑定 ──
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey && !sendBtn.disabled) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// ESC 关闭面板
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && panel.classList.contains('open')) {
+    toggleChat();
+  }
+});
+
+// ── 首次渲染 ──
+render();
+
+// ═══════════════════════════════════════════
+// 看板初始化
+// ═══════════════════════════════════════════
+(function initDashboard() {
+  initChart();
+  loadIndexOverview();
+  loadKline(currentStock, currentPeriod);
+  loadBoards();
+  loadPredictions();
+  loadTrend();
+})();
+</script>
+</body>
+</html>
