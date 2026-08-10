@@ -239,6 +239,51 @@
     color: var(--accent-glow);
   }
 
+  /* ── 指数切换按钮（胶囊） ── */
+  .idx-switch-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .idx-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 6px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .idx-btn:hover { border-color: var(--accent); color: var(--text); }
+  .idx-btn.active {
+    background: rgba(110, 64, 201, 0.2);
+    border-color: var(--accent);
+    color: var(--accent-glow);
+  }
+  .idx-btn.custom-btn { padding: 6px 10px 6px 16px; }
+  .idx-btn .custom-label { pointer-events: none; }
+  .custom-code-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed var(--border);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    width: 72px;
+    outline: none;
+    font-family: 'SF Mono', 'Cascadia Code', monospace;
+    transition: border-color 0.2s;
+    padding: 1px 0;
+  }
+  .custom-code-input:focus { border-bottom-color: var(--accent); }
+  .custom-code-input::placeholder { color: #484f58; font-weight: 400; }
+
   .chart-container {
     flex: 1;
     min-height: 440px;
@@ -1497,10 +1542,17 @@
     <!-- K线图表 -->
     <div class="glass-card chart-section">
       <div class="chart-toolbar">
-        <div class="stock-input">
-          <span class="market-tag">SH</span>
-          <input id="stockCode" type="text" value="600519" placeholder="股票代码" maxlength="6" autocomplete="off">
-          <button onclick="switchStock()">切换</button>
+        <div class="idx-switch-btns">
+          <button class="idx-btn active" data-code="000001" onclick="switchIndex(this, '000001')">上证指数</button>
+          <button class="idx-btn" data-code="399001" onclick="switchIndex(this, '399001')">深证成指</button>
+          <button class="idx-btn" data-code="399006" onclick="switchIndex(this, '399006')">创业板指</button>
+          <button class="idx-btn custom-btn" id="customBtn" data-code="custom" onclick="switchIndex(this, 'custom')">
+            <span class="custom-label">自定义</span>
+            <input id="customCodeInput" class="custom-code-input" type="text" value="600519" placeholder="代码" maxlength="6"
+                   onclick="event.stopPropagation()"
+                   onkeydown="if(event.key==='Enter'){switchCustomStock();event.stopPropagation();}"
+                   style="display:none">
+          </button>
         </div>
         <div class="period-btns">
           <button data-period="30" onclick="switchPeriod(this, 30)">1月</button>
@@ -1723,7 +1775,7 @@ function updateIndexItem(key, item) {
 
 // ── K线图表 ──
 let klineChart = null;
-let currentStock = '600519';
+let currentStock = '000001';
 let currentPeriod = 180;
 
 function initChart() {
@@ -1759,7 +1811,6 @@ function generateMockKline(days) {
   for (let i = days; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    // 跳过周末
     if (d.getDay() === 0 || d.getDay() === 6) continue;
     const dd = String(d.getDate()).padStart(2,'0');
     const mm = String(d.getMonth()+1).padStart(2,'0');
@@ -1783,6 +1834,39 @@ function generateMockKline(days) {
     const slice = a.slice(i - n + 1, i + 1);
     return +(slice.reduce((s, v) => s + v, 0) / n).toFixed(2);
   });
+  const ma5 = ma(close, 5);
+  const ma20 = ma(close, 20);
+  const ma60 = ma(close, 60);
+
+  // BOLL (上/下轨)
+  const boll_up = [], boll_dn = [];
+  for (let i = 0; i < close.length; i++) {
+    if (i < 19 || ma20[i] == null) { boll_up.push(null); boll_dn.push(null); continue; }
+    const slice = close.slice(i - 19, i + 1);
+    const mean = ma20[i];
+    const variance = slice.reduce((s, v) => s + (v - mean) ** 2, 0) / 20;
+    const std = Math.sqrt(variance);
+    boll_up.push(+(mean + 2 * std).toFixed(2));
+    boll_dn.push(+(mean - 2 * std).toFixed(2));
+  }
+
+  // KDJ (9,3,3)
+  const kdj_k = [], kdj_d = [], kdj_j = [];
+  let prevK = 50, prevD = 50;
+  for (let i = 0; i < close.length; i++) {
+    if (i < 8) { kdj_k.push(null); kdj_d.push(null); kdj_j.push(null); continue; }
+    const h9 = Math.max(...high.slice(i - 8, i + 1));
+    const l9 = Math.min(...low.slice(i - 8, i + 1));
+    const rsv = (h9 - l9 > 0) ? ((close[i] - l9) / (h9 - l9)) * 100 : 50;
+    const k = (2 / 3) * prevK + (1 / 3) * rsv;
+    const d = (2 / 3) * prevD + (1 / 3) * k;
+    const j = 3 * k - 2 * d;
+    kdj_k.push(+k.toFixed(2));
+    kdj_d.push(+d.toFixed(2));
+    kdj_j.push(+j.toFixed(2));
+    prevK = k; prevD = d;
+  }
+
   return {
     dates,
     open,
@@ -1790,9 +1874,14 @@ function generateMockKline(days) {
     high,
     low,
     volume,
-    ma5: ma(close, 5),
-    ma20: ma(close, 20),
-    ma60: ma(close, 60),
+    ma5,
+    ma20,
+    ma60,
+    boll_up,
+    boll_dn,
+    kdj_k,
+    kdj_d,
+    kdj_j,
   };
 }
 
@@ -1814,8 +1903,9 @@ function renderKline(data) {
   const option = {
     backgroundColor: 'transparent',
     grid: [
-      { left: '8%', right: '2%', top: '2%', height: '58%' },
-      { left: '8%', right: '2%', top: '68%', height: '22%' },
+      { left: '8%', right: '2%', top: '5%', height: '48%' },
+      { left: '8%', right: '2%', top: '58%', height: '14%' },
+      { left: '8%', right: '2%', top: '77%', height: '18%' },
     ],
     xAxis: [
       {
@@ -1840,6 +1930,19 @@ function renderKline(data) {
         axisLabel: { show: false },
         splitLine: { show: false },
       },
+      {
+        type: 'category',
+        data: data.dates,
+        gridIndex: 2,
+        axisLine: { lineStyle: { color: '#30363d' } },
+        axisTick: { show: false },
+        axisLabel: {
+          color: '#8b949e',
+          fontSize: 9,
+          interval: Math.max(Math.floor(data.dates.length / 8), 1),
+        },
+        splitLine: { show: false },
+      },
     ],
     yAxis: [
       {
@@ -1861,11 +1964,28 @@ function renderKline(data) {
         axisLabel: { color: '#8b949e', fontSize: 10 },
         splitLine: { lineStyle: { color: '#21262d', type: 'dashed' } },
       },
+      {
+        type: 'value',
+        gridIndex: 2,
+        min: 0,
+        max: 100,
+        splitNumber: 3,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: {
+          color: '#8b949e',
+          fontSize: 9,
+          formatter: function(v) { return v === 20 ? '20' : v === 50 ? '50' : v === 80 ? '80' : ''; },
+        },
+        splitLine: {
+          lineStyle: { color: '#21262d', type: 'dashed' },
+        },
+      },
     ],
     dataZoom: [
       {
         type: 'inside',
-        xAxisIndex: [0, 1],
+        xAxisIndex: [0, 1, 2],
         start: Math.max(0, 100 - (60 / data.dates.length) * 100),
         end: 100,
       },
@@ -1881,7 +2001,12 @@ function renderKline(data) {
         const ma5 = params.find(p => p.seriesName === 'MA5');
         const ma20 = params.find(p => p.seriesName === 'MA20');
         const ma60 = params.find(p => p.seriesName === 'MA60');
+        const bollUp = params.find(p => p.seriesName === 'BOLL上轨');
+        const bollDn = params.find(p => p.seriesName === 'BOLL下轨');
         const vol = params.find(p => p.seriesName === '成交量');
+        const kdjK = params.find(p => p.seriesName === 'KDJ-K');
+        const kdjD = params.find(p => p.seriesName === 'KDJ-D');
+        const kdjJ = params.find(p => p.seriesName === 'KDJ-J');
         let html = `<div style="font-weight:600;margin-bottom:4px">${k.axisValue}</div>`;
         if (k && k.data) {
           const [o, c, l, h] = k.data;
@@ -1890,7 +2015,12 @@ function renderKline(data) {
         if (ma5 && ma5.data != null) html += `<span style="color:#f5a623">MA5: ${ma5.data}</span><br/>`;
         if (ma20 && ma20.data != null) html += `<span style="color:#d44a8c">MA20: ${ma20.data}</span><br/>`;
         if (ma60 && ma60.data != null) html += `<span style="color:#506ef5">MA60: ${ma60.data}</span><br/>`;
-        if (vol && vol.data != null) html += `成交量: ${(vol.data / 10000).toFixed(0)}万手`;
+        if (bollUp && bollUp.data != null) html += `<span style="color:#a78bfa">BOLL上轨: ${bollUp.data}</span><br/>`;
+        if (bollDn && bollDn.data != null) html += `<span style="color:#a78bfa">BOLL下轨: ${bollDn.data}</span><br/>`;
+        if (kdjK && kdjK.data != null) html += `<span style="color:#f5a623">K: ${kdjK.data}</span> &nbsp;`;
+        if (kdjD && kdjD.data != null) html += `<span style="color:#d44a8c">D: ${kdjD.data}</span> &nbsp;`;
+        if (kdjJ && kdjJ.data != null) html += `<span style="color:#8b5cf6">J: ${kdjJ.data}</span>`;
+        if (vol && vol.data != null) html += `<br/>成交量: ${(vol.data / 10000).toFixed(0)}万手`;
         return html;
       },
     },
@@ -1939,6 +2069,26 @@ function renderKline(data) {
         lineStyle: { color: '#506ef5', width: 1, type: 'solid' },
       },
       {
+        name: 'BOLL上轨',
+        type: 'line',
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: data.boll_up || [],
+        smooth: false,
+        symbol: 'none',
+        lineStyle: { color: '#a78bfa', width: 1, type: 'dashed' },
+      },
+      {
+        name: 'BOLL下轨',
+        type: 'line',
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: data.boll_dn || [],
+        smooth: false,
+        symbol: 'none',
+        lineStyle: { color: '#a78bfa', width: 1, type: 'dashed' },
+      },
+      {
         name: '成交量',
         type: 'bar',
         xAxisIndex: 1,
@@ -1951,17 +2101,68 @@ function renderKline(data) {
           };
         }),
       },
+      {
+        name: 'KDJ-K',
+        type: 'line',
+        xAxisIndex: 2,
+        yAxisIndex: 2,
+        data: data.kdj_k || [],
+        smooth: false,
+        symbol: 'none',
+        lineStyle: { color: '#f5a623', width: 1.2 },
+      },
+      {
+        name: 'KDJ-D',
+        type: 'line',
+        xAxisIndex: 2,
+        yAxisIndex: 2,
+        data: data.kdj_d || [],
+        smooth: false,
+        symbol: 'none',
+        lineStyle: { color: '#d44a8c', width: 1.2 },
+      },
+      {
+        name: 'KDJ-J',
+        type: 'line',
+        xAxisIndex: 2,
+        yAxisIndex: 2,
+        data: data.kdj_j || [],
+        smooth: false,
+        symbol: 'none',
+        lineStyle: { color: '#8b5cf6', width: 1.2 },
+      },
     ],
   };
 
   klineChart.setOption(option, true);
 }
 
-function switchStock() {
-  const input = document.getElementById('stockCode');
+function switchIndex(btn, code) {
+  // 更新 active 状态
+  document.querySelectorAll('.idx-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  // 自定义按钮：显示输入框
+  const customInput = document.getElementById('customCodeInput');
+  const customLabel = document.querySelector('.custom-label');
+  if (code === 'custom') {
+    customInput.style.display = 'inline-block';
+    if (customLabel) customLabel.style.display = 'none';
+    setTimeout(() => customInput.focus(), 100);
+    return;
+  }
+  // 预设指数：隐藏自定义输入
+  customInput.style.display = 'none';
+  if (customLabel) customLabel.style.display = 'inline';
+  currentStock = code;
+  loadKline(code, currentPeriod);
+}
+
+function switchCustomStock() {
+  const input = document.getElementById('customCodeInput');
   const code = input.value.trim();
   if (!code || code.length < 6) { input.focus(); return; }
-  input.value = code;
+  currentStock = code;
   loadKline(code, currentPeriod);
 }
 
@@ -1971,9 +2172,9 @@ function switchPeriod(btn, period) {
   loadKline(currentStock, period);
 }
 
-// 股票代码输入回车切换
-document.getElementById('stockCode')?.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') switchStock();
+// 自定义代码输入框回车切换
+document.getElementById('customCodeInput')?.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { switchCustomStock(); e.stopPropagation(); }
 });
 
 // ── 板块热力 ──

@@ -25,29 +25,47 @@ def api_chat():
 
 @app.route('/api/kline')
 def api_kline():
-    """K线数据：日K+MA5/20/60+成交量"""
+    """K线数据：日K+MA5/20/60+BOLL+KDJ+成交量（支持股票/指数）"""
     code = request.args.get('code', '600519')
-    symbol = ('sh' if code.startswith('6') else 'sz') + code
+    # 指数支持
+    idx_map = {'000001': 'sh000001', '399001': 'sz399001', '399006': 'sz399006'}
     try:
         import akshare as ak
         import pandas as pd
-        df = ak.stock_zh_a_daily(symbol=symbol, start_date='20250101', end_date='20260810', adjust='qfq')
+        if code in idx_map:
+            df = ak.stock_zh_index_daily(symbol=idx_map[code])
+            df = df[df['date'].astype(str).str.slice(0, 10) >= '2025-01-01']
+            df = df.rename(columns={'amount': 'volume'})
+        else:
+            symbol = ('sh' if code.startswith('6') else 'sz') + code
+            df = ak.stock_zh_a_daily(symbol=symbol, start_date='20250101', end_date='20260810', adjust='qfq')
         if df is None or len(df) == 0:
             return jsonify({'error': '无数据'}), 404
+        df = df.reset_index(drop=True)
         df['ma5'] = df['close'].rolling(5).mean()
         df['ma20'] = df['close'].rolling(20).mean()
         df['ma60'] = df['close'].rolling(60).mean()
-        data = df.tail(120)
+        # BOLL
+        df['boll_up'] = df['ma20'] + 2 * df['close'].rolling(20).std()
+        df['boll_dn'] = df['ma20'] - 2 * df['close'].rolling(20).std()
+        # KDJ
+        low9 = df['low'].rolling(9).min()
+        high9 = df['high'].rolling(9).max()
+        rsv = (df['close'] - low9) / (high9 - low9).replace(0, None) * 100
+        df['kdj_k'] = rsv.ewm(com=2).mean()
+        df['kdj_d'] = df['kdj_k'].ewm(com=2).mean()
+        df['kdj_j'] = 3 * df['kdj_k'] - 2 * df['kdj_d']
+        data = df.tail(150)
+        def f(x):
+            return [round(float(v), 2) if pd.notna(v) else None for v in x]
         return jsonify({
             'dates': [str(d)[:10] for d in data['date']],
-            'close': [round(float(x), 2) for x in data['close']],
-            'open': [round(float(x), 2) for x in data['open']],
-            'high': [round(float(x), 2) for x in data['high']],
-            'low': [round(float(x), 2) for x in data['low']],
-            'volume': [float(x) for x in data['volume']],
-            'ma5': [round(float(x), 2) if not pd.isna(x) else None for x in data['ma5']],
-            'ma20': [round(float(x), 2) if not pd.isna(x) else None for x in data['ma20']],
-            'ma60': [round(float(x), 2) if not pd.isna(x) else None for x in data['ma60']],
+            'close': f(data['close']), 'open': f(data['open']),
+            'high': f(data['high']), 'low': f(data['low']),
+            'volume': [float(x) if pd.notna(x) else 0 for x in data['volume']],
+            'ma5': f(data['ma5']), 'ma20': f(data['ma20']), 'ma60': f(data['ma60']),
+            'boll_up': f(data['boll_up']), 'boll_dn': f(data['boll_dn']),
+            'kdj_k': f(data['kdj_k']), 'kdj_d': f(data['kdj_d']), 'kdj_j': f(data['kdj_j']),
         })
     except Exception as e:
         return jsonify({'error': str(e)[:100]}), 500
