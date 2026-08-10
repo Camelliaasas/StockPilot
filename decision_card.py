@@ -76,17 +76,32 @@ def decision(code, name, news):
             inst = f'{top["机构"]} {top["东财评级"]}（{top["2026-盈利预测-市盈率"]}x）'
     except Exception:
         inst = ''
+    # 估值分位（贵/便宜——价值判断）
+    val = ''
+    val_score = 0
+    try:
+        from valuation import valuation as val_fn
+        v = val_fn(code, name)
+        if v.get('pe_pct') is not None:
+            p = v['pe_pct']
+            val = f'PE{v["pe"]} 历史{p}%分位'
+            if p < 20: val_score = 1; val += '（极便宜）'
+            elif p < 50: val_score = 1; val += '（偏便宜）'
+            elif p > 80: val_score = -1; val += '（偏贵）'
+    except Exception:
+        pass
     # 决策表
     score = 0
     score += 2 if tech == '买入' else (1 if tech == '持有' else (-1 if tech == '卖出' else 0))
     score += 1 if fund == '多' else (-1 if fund == '空' else 0)
     score += 1 if news_dir == '看多' else (-1 if news_dir == '看空' else 0)
+    score += val_score
     if score >= 3: act, pos = '买入', '30%'
     elif score >= 1: act, pos = '持有', '20%'
     elif score <= -2: act, pos = '卖出', '0%'
     else: act, pos = '观望', '10%'
     return {'code': code, 'name': name, 'tech': tech, 'fund': fund, 'news': news_dir,
-            'score': score, 'action': act, 'position': pos, 'bias': bias, 'inst': inst}
+            'score': score, 'action': act, 'position': pos, 'bias': bias, 'inst': inst, 'val': val}
 
 def main():
     try:
@@ -107,6 +122,8 @@ def main():
         print(f"\n{icon} {d['name']}（{d['code']}）现价 {price}{chg_txt}")
         if d.get('inst'):
             print(f"   🏦 机构: {d['inst']}")
+        if d.get('val'):
+            print(f"   💰 估值: {d['val']}")
         print(f"   技术[{d['tech']}] 基本面[{d['fund']}] 新闻[{d['news']}] 综合分[{d['score']:+d}]")
         print(f"   → 决策：{d['action']} | 建议仓位 {d['position']}")
         cards.append(d)
