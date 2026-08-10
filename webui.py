@@ -215,6 +215,22 @@ def api_risk():
         alerts.append({'msg': '✅ 无重大风险信号'})
     return jsonify({'alerts': alerts})
 
+@app.route('/api/macro_chart')
+def api_macro_chart():
+    """宏观历史曲线（CPI/PMI/M2——近 24 期）"""
+    try:
+        import akshare as ak
+        cpi = ak.macro_china_cpi_yearly()
+        cpi_row = cpi[cpi['商品'] == '全国-当月同比'].tail(24)
+        pmi = ak.macro_china_pmi_yearly()
+        pmi_row = pmi[pmi['商品'] == '制造业-指数'].tail(24) if (pmi['商品'] == '制造业-指数').any() else pmi.tail(24)
+        return jsonify({
+            'cpi': {'dates': [str(i) for i in range(len(cpi_row))], 'values': [float(v) for v in cpi_row['今值']]},
+            'pmi': {'dates': [str(d) for d in pmi_row['日期']], 'values': [float(v) for v in pmi_row['今值']]},
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)[:80]}), 500
+
 @app.route('/api/macro')
 def api_macro():
     """宏观环境"""
