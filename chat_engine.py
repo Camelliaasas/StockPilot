@@ -74,7 +74,7 @@ def llm_answer(question, context):
         return f'LLM 调用失败: {str(e)[:60]}'
 
 def chat(message):
-    """主入口：处理用户问题"""
+    """主入口：处理用户问题——全引擎接入"""
     # 体检意图（"体检XX"）
     if '体检' in message:
         from diagnose import diagnose
@@ -91,6 +91,40 @@ def chat(message):
                 lines.append('⚠️ 仅供参考，非投资建议')
                 return '\n'.join(lines)
         return '请指定股票（如：体检茅台 / 体检宁德时代）'
+    # 估值意图（"XX估值"）
+    if '估值' in message:
+        from valuation import valuation
+        for name, code in KNOWN_STOCKS.items():
+            if name in message:
+                v = valuation(code, name)
+                lines = [f"💰 估值分析：{v['name']}（{v['code']}）"]
+                if v.get('pe') is not None:
+                    lines.append(f"PE(TTM): {v['pe']}（历史 {v['pe_pct']}% 分位）")
+                if v.get('pb') is not None:
+                    lines.append(f"PB: {v['pb']}（历史 {v['pb_pct']}% 分位）")
+                lines.append(f"结论: {v['verdict']}")
+                lines.append('⚠️ 估值仅供参考——非投资建议')
+                return '\n'.join(lines)
+        return '请指定股票（如：茅台估值）'
+    # 筹码意图（"XX筹码"）
+    if '筹码' in message:
+        from chip_signal import chip_signal
+        for name, code in KNOWN_STOCKS.items():
+            if name in message:
+                r = chip_signal(code, name)
+                return f"🎯 筹码分析：{r['name']}\n{r['signal']}\n📝 {r.get('detail', '')}\n⚠️ 仅供参考"
+        return '请指定股票（如：茅台筹码）'
+    # 政策意图（"政策/新闻"）
+    if '政策' in message or '新闻' in message:
+        from policy_tracker import scan_policy
+        events = scan_policy()
+        if not events:
+            return '📡 当前无新政策/重大新闻（政策追踪器每 30 分钟自动扫描——有重大决策即时推送）'
+        lines = ['📡 最新政策追踪:']
+        for ts, t, c in events[:5]:
+            lines.append(f'  [{ts}] {t[:50]}')
+        lines.append('（详细分析见推送——政策实时追踪中）')
+        return '\n'.join(lines)
     stocks = detect_stocks(message)
     if not stocks:
         return '暂不支持该查询——目前支持：个股分析/两只股票对比（茅台/宁德/五粮液/比亚迪/平安等）'

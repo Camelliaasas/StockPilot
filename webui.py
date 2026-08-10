@@ -93,5 +93,44 @@ def api_trend():
     top_small = sorted(small.items(), key=lambda x: -x[1])[:8]
     return jsonify({'big': big, 'mid': mid, 'small': [{'sector': s, 'score': v} for s, v in top_small]})
 
+@app.route('/api/oneline')
+def api_oneline():
+    """一句话看盘"""
+    from one_line import one_line
+    return jsonify({'line': one_line()})
+
+@app.route('/api/decision')
+def api_decision():
+    """决策卡（8 只核心——简化版——快速）"""
+    from decision_card import decision, WATCHLIST
+    import akshare as ak
+    try:
+        news = [f'{r["标题"]}' for _, r in ak.stock_info_global_em().head(5).iterrows()]
+    except Exception:
+        news = []
+    out = []
+    for code, name in WATCHLIST[:5]:
+        try:
+            d = decision(code, name, news)
+            out.append({'name': d['name'], 'price': '—', 'action': d['action'], 'position': d['position']})
+        except Exception:
+            pass
+    return jsonify(out)
+
+@app.route('/api/futures')
+def api_futures():
+    """期货主力分析"""
+    from futures_analysis import analyze_futures, FUTURES
+    out = []
+    for symbol, name in FUTURES[:6]:
+        try:
+            r = analyze_futures(symbol, name)
+            if r and 'error' not in r:
+                out.append({'name': r['name'], 'cur': r['cur'], 'trend': r['trend'],
+                            'signal': r['signal'], 'conf': round(r['conf'])})
+        except Exception:
+            pass
+    return jsonify(out)
+
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5521, debug=False)

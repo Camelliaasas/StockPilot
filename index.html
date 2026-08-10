@@ -749,6 +749,327 @@
     .middle-row { min-height: auto; }
     .chart-container { min-height: 340px; }
   }
+
+  /* ═══════════ 新增区块样式 ═══════════ */
+
+  /* ── 一句话看盘横幅 ── */
+  .oneline-banner {
+    margin: 0 0 2px;
+    padding: 14px 22px;
+    background: linear-gradient(135deg, rgba(110,64,201,0.12) 0%, rgba(59,130,246,0.08) 100%);
+    border: 1px solid rgba(110,64,201,0.2);
+    border-radius: var(--radius);
+    text-align: center;
+    animation: bannerPulse 3s ease-in-out infinite;
+  }
+  @keyframes bannerPulse {
+    0%, 100% { border-color: rgba(110,64,201,0.2); box-shadow: 0 0 20px rgba(110,64,201,0.05); }
+    50% { border-color: rgba(110,64,201,0.45); box-shadow: 0 0 32px rgba(110,64,201,0.12); }
+  }
+  .oneline-banner .ol-icon {
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 18px;
+    animation: iconBounce 2s ease-in-out infinite;
+  }
+  @keyframes iconBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  .oneline-banner .ol-text {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .oneline-banner .ol-loading {
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+
+  /* ── 决策卡网格 ── */
+  .decision-section { padding: 16px 18px; }
+  .decision-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 1100px) {
+    .decision-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .decision-grid { grid-template-columns: 1fr; }
+  }
+  .decision-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .decision-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .decision-card:hover {
+    border-color: rgba(110,64,201,0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(110,64,201,0.1);
+  }
+  .decision-card:hover::before { opacity: 1; }
+  .decision-card .dc-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .decision-card .dc-price {
+    font-size: 20px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+    margin-bottom: 8px;
+  }
+  .decision-card .dc-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .dc-action {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 12px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .dc-action.buy    { background: rgba(239,68,68,0.18);   color: #ef4444; }
+  .dc-action.hold   { background: rgba(210,153,34,0.18);  color: #d29922; }
+  .dc-action.sell   { background: rgba(34,197,94,0.18);   color: #22c55e; }
+  .dc-action.watch  { background: rgba(139,148,158,0.18); color: #8b949e; }
+  .dc-position {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  /* ── 估值区 ── */
+  .valuation-section { padding: 16px 18px; }
+  .valuation-table {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .valuation-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 80px 120px;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  .valuation-row:hover {
+    border-color: rgba(59,130,246,0.4);
+    background: var(--surface-hover);
+  }
+  @media (max-width: 700px) {
+    .valuation-row { grid-template-columns: 80px 1fr 60px 90px; gap: 8px; }
+  }
+  .valuation-row .val-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .valuation-row .val-bar-wrap {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .valuation-row .val-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.8s cubic-bezier(0.16,1,0.3,1);
+  }
+  .valuation-row .val-bar-fill.low  { background: linear-gradient(90deg, #22c55e, #3fb950); }
+  .valuation-row .val-bar-fill.mid  { background: linear-gradient(90deg, #d29922, #f0c040); }
+  .valuation-row .val-bar-fill.high { background: linear-gradient(90deg, #f85149, #ef4444); }
+  .valuation-row .val-pct {
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+  }
+  .valuation-row .val-verdict {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 10px;
+    text-align: center;
+  }
+  .val-verdict.cheap  { background: rgba(34,197,94,0.15);  color: #22c55e; }
+  .val-verdict.fair   { background: rgba(210,153,34,0.15); color: #d29922; }
+  .val-verdict.expensive { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+  /* ── 筹码区 ── */
+  .chips-section { padding: 16px 18px; }
+  .chips-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 1100px) {
+    .chips-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .chips-grid { grid-template-columns: 1fr; }
+  }
+  .chip-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s;
+  }
+  .chip-card:hover { border-color: var(--accent); }
+  .chip-card .ch-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .chip-signal {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .chip-signal .ch-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .chip-signal.concentrate .ch-dot {
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239,68,68,0.6);
+  }
+  .chip-signal.disperse .ch-dot {
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34,197,94,0.6);
+  }
+  .chip-signal.neutral-chip .ch-dot {
+    background: #8b949e;
+    box-shadow: 0 0 6px rgba(139,148,158,0.4);
+  }
+  .chip-signal.concentrate    { color: #ef4444; }
+  .chip-signal.disperse       { color: #22c55e; }
+  .chip-signal.neutral-chip   { color: #8b949e; }
+
+  /* ── 期货区 ── */
+  .futures-section { padding: 16px 18px; }
+  .futures-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 1100px) {
+    .futures-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .futures-grid { grid-template-columns: 1fr; }
+  }
+  .future-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .future-card:hover {
+    border-color: rgba(110,64,201,0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(110,64,201,0.1);
+  }
+  .future-card .fu-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .future-card .fu-price {
+    font-size: 18px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+    margin-bottom: 6px;
+  }
+  .future-card .fu-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .fu-trend {
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .fu-trend.bull { color: #ef4444; }
+  .fu-trend.bear { color: #22c55e; }
+  .fu-trend.shock { color: #d29922; }
+  .fu-signal-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 10px;
+  }
+  .fu-signal-tag.long  { background: rgba(239,68,68,0.18);  color: #ef4444; }
+  .fu-signal-tag.short { background: rgba(34,197,94,0.18);  color: #22c55e; }
+  .fu-signal-tag.wait  { background: rgba(139,148,158,0.18);color: #8b949e; }
+  .fu-confidence {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  /* ── 骨架加载动画 ── */
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface-hover) 25%, var(--border) 50%, var(--surface-hover) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .skeleton-text { height: 16px; width: 80%; margin-bottom: 8px; }
+  .skeleton-price { height: 24px; width: 60%; margin-bottom: 8px; }
+  .skeleton-badge { height: 22px; width: 50px; }
+  .skeleton-row { height: 36px; width: 100%; margin-bottom: 6px; }
+  .section-loading {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    padding: 24px;
+  }
 </style>
 </head>
 <body>
@@ -785,6 +1106,11 @@
     </div>
   </div>
 
+  <!-- ── 一句话看盘横幅 ── -->
+  <div class="glass-card oneline-banner" id="onelineBanner">
+    <div class="ol-loading">⏳ 加载今日核心判断...</div>
+  </div>
+
   <!-- ── 中部：K线图 + 预测卡片 ── -->
   <div class="middle-row">
     <!-- K线图表 -->
@@ -814,6 +1140,36 @@
     </div>
   </div>
 
+  <!-- ── 决策卡区 ── -->
+  <div class="glass-card decision-section">
+    <div class="section-header">
+      <span class="title">🎯 核心股决策卡</span>
+    </div>
+    <div class="decision-grid" id="decisionGrid">
+      <div class="section-loading">⏳ 加载决策数据...</div>
+    </div>
+  </div>
+
+  <!-- ── 估值区 ── -->
+  <div class="glass-card valuation-section">
+    <div class="section-header">
+      <span class="title">📊 PE 估值分位</span>
+    </div>
+    <div class="valuation-table" id="valuationTable">
+      <div class="section-loading">⏳ 加载估值数据...</div>
+    </div>
+  </div>
+
+  <!-- ── 筹码区 ── -->
+  <div class="glass-card chips-section">
+    <div class="section-header">
+      <span class="title">🔍 筹码集中度信号</span>
+    </div>
+    <div class="chips-grid" id="chipsGrid">
+      <div class="section-loading">⏳ 加载筹码数据...</div>
+    </div>
+  </div>
+
   <!-- ── 底部：板块热力 + 分级预测 ── -->
   <div class="bottom-row">
     <!-- 板块热力 -->
@@ -834,6 +1190,16 @@
       <div id="trendContent">
         <div class="trend-loading">加载中...</div>
       </div>
+    </div>
+  </div>
+
+  <!-- ── 期货区 ── -->
+  <div class="glass-card futures-section">
+    <div class="section-header">
+      <span class="title">📡 期货全景</span>
+    </div>
+    <div class="futures-grid" id="futuresGrid">
+      <div class="section-loading">⏳ 加载期货数据...</div>
     </div>
   </div>
 
@@ -1272,6 +1638,60 @@ function renderPredictions(preds) {
   }).join('');
 }
 
+// ── 新增 Mock 数据生成器 ──
+
+function generateMockDecision() {
+  const stocks = [
+    { name: '贵州茅台', base: 1680 },
+    { name: '宁德时代', base: 210 },
+    { name: '比亚迪',   base: 280 },
+    { name: '五粮液',   base: 148 },
+    { name: '中国平安', base: 48 },
+    { name: '招商银行', base: 38 },
+    { name: '药明康德', base: 62 },
+    { name: '中芯国际', base: 52 },
+  ];
+  const actions = ['buy','hold','sell','watch'];
+  const positions = ['30%','满仓','50%','70%','20%','轻仓','40%','60%'];
+  return stocks.map((s, i) => ({
+    name: s.name,
+    price: (s.base + (Math.random() - 0.5) * s.base * 0.04).toFixed(2),
+    action: actions[i % actions.length],
+    position: positions[i],
+  }));
+}
+
+function generateMockValuation() {
+  const stocks = ['贵州茅台','宁德时代','比亚迪','五粮液','中国平安','招商银行','药明康德','中芯国际'];
+  return stocks.map(name => {
+    const pct = Math.floor(Math.random() * 100);
+    let verdict, cls;
+    if (pct < 30) { verdict = '低估'; cls = 'cheap'; }
+    else if (pct < 70) { verdict = '合理'; cls = 'fair'; }
+    else { verdict = '高估'; cls = 'expensive'; }
+    return { name, pe: (Math.random() * 60 + 5).toFixed(1), pe_pct: pct, verdict, cls };
+  });
+}
+
+function generateMockChips() {
+  const stocks = ['贵州茅台','宁德时代','比亚迪','五粮液','中国平安','招商银行','药明康德','中芯国际'];
+  const signals = ['筹码集中','筹码分散','筹码集中','筹码集中','筹码分散','筹码集中','筹码分散','筹码集中'];
+  return stocks.map((name, i) => ({ name, signal: signals[i] }));
+}
+
+function generateMockFutures() {
+  return [
+    { name:'NYMEX原油',  cur:'78.50', trend:'bull',  signal:'做多', conf:72 },
+    { name:'COMEX黄金',  cur:'2450.20', trend:'bull', signal:'做多', conf:85 },
+    { name:'LME铜',      cur:'8920.00', trend:'shock',signal:'观望', conf:55 },
+    { name:'CBOT大豆',   cur:'1180.25', trend:'bear', signal:'做空', conf:68 },
+    { name:'ICE棉花',    cur:'82.15',   trend:'shock',signal:'观望', conf:50 },
+    { name:'SGX铁矿石',  cur:'112.80',  trend:'bear', signal:'做空', conf:74 },
+    { name:'富时A50',    cur:'12850.00',trend:'bull', signal:'做多', conf:70 },
+    { name:'恒生指数期货',cur:'17820.00',trend:'bull',signal:'做多', conf:63 },
+  ];
+}
+
 // ── 分级预测 ──
 async function loadTrend() {
   const container = document.getElementById('trendContent');
@@ -1361,6 +1781,147 @@ function renderTrend(data) {
   }
 
   container.innerHTML = html || '<div class="trend-loading">暂无趋势数据</div>';
+}
+
+// ── 一句话看盘 ──
+async function loadOneLine() {
+  const el = document.getElementById('onelineBanner');
+  try {
+    const resp = await fetch('/api/oneline');
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    el.innerHTML = `<span class="ol-icon">📡</span><span class="ol-text">${data.line || '市场数据加载中...'}</span>`;
+  } catch {
+    el.innerHTML = '<span class="ol-icon">📡</span><span class="ol-text">今日核心判断：短期大盘震荡偏强，科技成长风格占优，仓位建议 6-7 成，关注量能变化。</span>';
+  }
+}
+
+// ── 决策卡 ──
+async function loadDecisions() {
+  const grid = document.getElementById('decisionGrid');
+  try {
+    const resp = await fetch('/api/decision');
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    renderDecisions(data);
+  } catch {
+    renderDecisions(generateMockDecision());
+  }
+}
+
+function renderDecisions(items) {
+  const grid = document.getElementById('decisionGrid');
+  if (!items || !items.length) {
+    grid.innerHTML = '<div class="section-loading">暂无决策数据</div>';
+    return;
+  }
+  const actionMap = { buy: ['买入','buy'], hold: ['持有','hold'], sell: ['卖出','sell'], watch: ['观望','watch'] };
+  grid.innerHTML = items.map(d => {
+    const [label, cls] = actionMap[d.action] || ['观望','watch'];
+    return `<div class="decision-card">
+      <div class="dc-name">${d.name}</div>
+      <div class="dc-price">¥${Number(d.price).toFixed(2)}</div>
+      <div class="dc-meta">
+        <span class="dc-action ${cls}">${label}</span>
+        <span class="dc-position">仓位 ${d.position || '--'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── 估值区 ──
+async function loadValuation() {
+  const tbl = document.getElementById('valuationTable');
+  try {
+    const resp = await fetch('/api/valuation');
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    renderValuation(data);
+  } catch {
+    renderValuation(generateMockValuation());
+  }
+}
+
+function renderValuation(items) {
+  const tbl = document.getElementById('valuationTable');
+  if (!items || !items.length) {
+    tbl.innerHTML = '<div class="section-loading">暂无估值数据</div>';
+    return;
+  }
+  tbl.innerHTML = items.map(v => {
+    const barCls = v.pe_pct < 30 ? 'low' : v.pe_pct < 70 ? 'mid' : 'high';
+    const verdictCls = v.cls || (v.pe_pct < 30 ? 'cheap' : v.pe_pct < 70 ? 'fair' : 'expensive');
+    return `<div class="valuation-row">
+      <span class="val-name">${v.name}</span>
+      <div class="val-bar-wrap"><div class="val-bar-fill ${barCls}" style="width:${v.pe_pct}%"></div></div>
+      <span class="val-pct">PE ${v.pe} · ${v.pe_pct}%</span>
+      <span class="val-verdict ${verdictCls}">${v.verdict}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── 筹码区 ──
+async function loadChips() {
+  const grid = document.getElementById('chipsGrid');
+  try {
+    const resp = await fetch('/api/chips');
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    renderChips(data);
+  } catch {
+    renderChips(generateMockChips());
+  }
+}
+
+function renderChips(items) {
+  const grid = document.getElementById('chipsGrid');
+  if (!items || !items.length) {
+    grid.innerHTML = '<div class="section-loading">暂无筹码数据</div>';
+    return;
+  }
+  grid.innerHTML = items.map(c => {
+    let cls = 'neutral-chip';
+    if (c.signal.includes('集中')) cls = 'concentrate';
+    else if (c.signal.includes('分散')) cls = 'disperse';
+    return `<div class="chip-card">
+      <span class="ch-name">${c.name}</span>
+      <span class="chip-signal ${cls}"><span class="ch-dot"></span>${c.signal}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── 期货区 ──
+async function loadFutures() {
+  const grid = document.getElementById('futuresGrid');
+  try {
+    const resp = await fetch('/api/futures');
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    renderFutures(data);
+  } catch {
+    renderFutures(generateMockFutures());
+  }
+}
+
+function renderFutures(items) {
+  const grid = document.getElementById('futuresGrid');
+  if (!items || !items.length) {
+    grid.innerHTML = '<div class="section-loading">暂无期货数据</div>';
+    return;
+  }
+  grid.innerHTML = items.map(f => {
+    const trendLabel = { bull:'多头', bear:'空头', shock:'震荡' };
+    const sigCls = f.signal === '做多' ? 'long' : f.signal === '做空' ? 'short' : 'wait';
+    return `<div class="future-card">
+      <div class="fu-name">${f.name}</div>
+      <div class="fu-price">${f.cur}</div>
+      <div class="fu-meta">
+        <span class="fu-trend ${f.trend}">${trendLabel[f.trend] || f.trend}</span>
+        <span class="fu-signal-tag ${sigCls}">${f.signal}</span>
+      </div>
+      <div class="fu-confidence">置信度 ${f.conf}%</div>
+    </div>`;
+  }).join('');
 }
 
 // ═══════════════════════════════════════════
@@ -1516,10 +2077,15 @@ render();
 (function initDashboard() {
   initChart();
   loadIndexOverview();
+  loadOneLine();
   loadKline(currentStock, currentPeriod);
+  loadDecisions();
+  loadValuation();
+  loadChips();
   loadBoards();
   loadPredictions();
   loadTrend();
+  loadFutures();
 })();
 </script>
 </body>
