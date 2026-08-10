@@ -257,6 +257,20 @@ def chat(message):
             lines.append(f'  {d.strftime("%m-%d")}（{delta}天后）: {desc}')
         lines.append('💡 数据发布日波动加大——注意仓位')
         return '\n'.join(lines)
+    # 黄金/外汇意图
+    if '黄金' in message or '汇率' in message or '美元' in message:
+        from gold_fx import gold_fx
+        r = gold_fx()
+        g, f = r.get('gold', {}), r.get('fx', {})
+        lines = ['🥇 黄金/外汇分析:']
+        if 'price' in g:
+            lines.append(f"· 上海金 {g['price']} | 20日{g['ret_20']:+.1f}% | 60日{g['ret_60']:+.1f}% → {g['signal']}")
+        if 'usd_cny' in f:
+            lines.append(f"· USD/CNY {f['usd_cny']}")
+        if 'trend' in f:
+            lines.append(f"· {f['trend']}")
+        lines.append('⚠️ 仅供参考——非投资建议')
+        return '\n'.join(lines)
     # 板块意图
     if '板块' in message or '轮动' in message:
         from sector_radar import sector_radar
