@@ -15,13 +15,37 @@ KNOWN_STOCKS = {
     '隆基': 'sh601012', '隆基绿能': 'sh601012',
     '东方财富': 'sz300059', '中信证券': 'sh600030',
 }
+_ALL_STOCKS = None
+
+def _load_all_stocks():
+    """全 A 股票表（5539 只——动态匹配）"""
+    global _ALL_STOCKS
+    if _ALL_STOCKS is None:
+        try:
+            import akshare as ak
+            df = ak.stock_info_a_code_name()
+            _ALL_STOCKS = {str(r['name']).replace(' ', ''): ('sh' if str(r['code']).startswith('6') else 'sz') + str(r['code']).zfill(6)
+                           for _, r in df.iterrows()}
+        except Exception:
+            _ALL_STOCKS = {}
+    return _ALL_STOCKS
 
 def detect_stocks(msg):
-    """识别问题里的股票（最多 2 只——对比用）"""
+    """识别问题里的股票（任意 A 股——全表匹配）——最多 2 只（对比用）"""
     found = []
     for name, code in KNOWN_STOCKS.items():
         if name in msg and code not in found:
             found.append((name, code))
+    if len(found) < 2:
+        # 全 A 动态匹配（优先 2-4 字名称）
+        all_stocks = _load_all_stocks()
+        # 全角→半角兼容
+        msg_half = msg.replace('Ａ', 'A').replace('ａ', 'a').replace('Ｂ', 'B').replace('Ｃ', 'C')
+        for name, code in all_stocks.items():
+            if len(name) >= 2 and (name in msg or name in msg_half) and code not in found:
+                found.append((name, code))
+                if len(found) >= 2:
+                    break
     return found[:2]
 
 def get_stock_data(code):
@@ -141,6 +165,53 @@ def chat(message):
                 if r and 'error' not in r:
                     icon = {'看多': '🔴', '看空': '🟢', '震荡': '⚪'}[r['signal']]
                     lines.append(f"{icon} {r['name']} ${r['cur']} | 20日{r['ret_20']:+.1f}% | {r['trend']} → {r['signal']}({r['conf']}%)")
+            except Exception:
+                pass
+        lines.append('⚠️ 仅供参考——非投资建议')
+        return '\n'.join(lines)
+    # 期货意图
+    if '期货' in message:
+        from futures_analysis import analyze_futures, FUTURES
+        lines = ['📊 期货主力分析:']
+        for symbol, name in FUTURES:
+            try:
+                r = analyze_futures(symbol, name)
+                if r and 'error' not in r:
+                    icon = {'看多': '🔴', '看空': '🟢', '震荡': '⚪'}[r['signal']]
+                    lines.append(f"{icon} {r['name']} {r['cur']} | 20日{r['ret_20']:+.1f}% | → {r['signal']}({r['conf']}%)")
+            except Exception:
+                pass
+        lines.append('⚠️ 仅供参考——非投资建议')
+        return '\n'.join(lines)
+    # 风险意图
+    if '风险' in message:
+        from risk_alert import check_risk
+        from decision_card import get_watchlist
+        watch = get_watchlist()
+        positions = [(c, n, 100 // len(watch)) for c, n in watch[:5]] if watch else []
+        import io
+        old = sys.stdout
+        buf = io.StringIO()
+        sys.stdout = buf
+        try:
+            check_risk(positions)
+        finally:
+            sys.stdout = old
+        return buf.getvalue()
+    # 决策意图（"今天买什么/决策"）
+    if '买什么' in message or '决策' in message:
+        from decision_card import get_watchlist, get_spot, decision
+        import akshare as ak
+        try:
+            news = [f'{r["标题"]}' for _, r in ak.stock_info_global_em().head(5).iterrows()]
+        except Exception:
+            news = []
+        lines = ['📋 今日决策（自选）:']
+        for code, name in get_watchlist():
+            try:
+                d = decision(code, name, news)
+                icon = {'买入': '🔴', '持有': '🟡', '卖出': '🟢', '观望': '⚪'}[d['action']]
+                lines.append(f"{icon} {d['name']} → {d['action']}（仓位{d['position']}）")
             except Exception:
                 pass
         lines.append('⚠️ 仅供参考——非投资建议')
