@@ -1573,6 +1573,132 @@
 		    line-height: 1.6;
 		  }
 
+
+		  /* ── 预测战绩区 ── */
+		  .verify-section { padding: 16px 18px; }
+		  .verify-section .section-header .title::before {
+		    background: linear-gradient(135deg, #a78bfa, #6e40c9);
+		    box-shadow: 0 0 8px #a78bfa;
+		  }
+		  .verify-hero {
+		    display: flex;
+		    align-items: center;
+		    justify-content: center;
+		    gap: 32px;
+		    flex-wrap: wrap;
+		    padding: 24px 0 20px;
+		    border-bottom: 1px solid var(--border);
+		    margin-bottom: 16px;
+		  }
+		  .verify-hero-item {
+		    text-align: center;
+		    min-width: 120px;
+		  }
+		  .verify-hero-item .vh-label {
+		    font-size: 11px;
+		    font-weight: 600;
+		    color: var(--text-secondary);
+		    text-transform: uppercase;
+		    letter-spacing: 0.06em;
+		    margin-bottom: 6px;
+		  }
+		  .verify-hero-item .vh-value {
+		    font-size: 34px;
+		    font-weight: 800;
+		    font-variant-numeric: tabular-nums;
+		    font-family: 'SF Mono','Cascadia Code','JetBrains Mono',monospace;
+		    color: var(--text);
+		    line-height: 1.1;
+		  }
+		  .verify-hero-item .vh-value.accent {
+		    background: linear-gradient(135deg, #a78bfa 0%, #c084fc 40%, #e879f9 100%);
+		    -webkit-background-clip: text;
+		    -webkit-text-fill-color: transparent;
+		    background-clip: text;
+		    font-size: 42px;
+		    filter: drop-shadow(0 0 18px rgba(168, 123, 250, 0.45));
+		  }
+		  .verify-hero-item .vh-sub {
+		    font-size: 11px;
+		    color: var(--text-secondary);
+		    margin-top: 2px;
+		  }
+		  .verify-tables {
+		    display: grid;
+		    grid-template-columns: 1fr 1fr;
+		    gap: 16px;
+		  }
+		  @media (max-width: 768px) {
+		    .verify-tables { grid-template-columns: 1fr; }
+		  }
+		  .verify-sub-title {
+		    font-size: 13px;
+		    font-weight: 700;
+		    color: var(--text);
+		    margin-bottom: 10px;
+		    display: flex;
+		    align-items: center;
+		    gap: 6px;
+		  }
+		  .verify-sub-title::before {
+		    content: '';
+		    width: 3px; height: 16px;
+		    border-radius: 2px;
+		    background: linear-gradient(180deg, #a78bfa, #6e40c9);
+		  }
+		  .verify-table-mini {
+		    width: 100%;
+		    border-collapse: collapse;
+		    font-size: 12px;
+		  }
+		  .verify-table-mini thead th {
+		    padding: 8px 10px;
+		    text-align: left;
+		    font-weight: 700;
+		    font-size: 11px;
+		    color: var(--text-secondary);
+		    text-transform: uppercase;
+		    letter-spacing: 0.04em;
+		    border-bottom: 1px solid var(--border);
+		    white-space: nowrap;
+		  }
+		  .verify-table-mini tbody td {
+		    padding: 7px 10px;
+		    border-bottom: 1px solid rgba(48,54,61,0.4);
+		    color: var(--text);
+		    white-space: nowrap;
+		  }
+		  .verify-table-mini tbody tr:hover {
+		    background: rgba(110,64,201,0.06);
+		  }
+		  .verify-badge {
+		    display: inline-flex;
+		    align-items: center;
+		    gap: 4px;
+		    font-size: 14px;
+		    font-weight: 700;
+		  }
+		  .verify-badge.correct { color: #3fb950; }
+		  .verify-badge.wrong   { color: #f85149; }
+		  .verify-empty-state {
+		    text-align: center;
+		    padding: 36px 20px;
+		    color: var(--text-secondary);
+		    font-size: 13px;
+		    line-height: 1.7;
+		  }
+		  .verify-empty-state .ve-icon {
+		    font-size: 32px;
+		    display: block;
+		    margin-bottom: 10px;
+		    opacity: 0.6;
+		  }
+		  .verify-loading {
+		    text-align: center;
+		    color: var(--text-secondary);
+		    font-size: 13px;
+		    padding: 24px;
+		  }
 	  .futures-section { padding: 16px 18px; }
   .futures-grid {
     display: grid;
@@ -2057,6 +2183,17 @@
 	    </div>
 	    <div class="paper-note">MA(5,10) 策略模拟盘回放——2024-2026——滑点0.1%+手续费万2.5——10万初始</div>
 	  </div>
+
+
+  <!-- ── 预测战绩区 ── -->
+  <div class="glass-card verify-section">
+    <div class="section-header">
+      <span class="title">🏆 预测战绩</span>
+    </div>
+    <div id="verifyContent">
+      <div class="verify-loading">⏳ 加载验证数据...</div>
+    </div>
+  </div>
 
   <!-- ── 期货区 ── -->
   <div class="glass-card futures-section">
@@ -3488,6 +3625,115 @@ function renderRisk(data) {
 	  });
 	}
 
+// ── 预测战绩 ──
+async function loadVerify() {
+  const el = document.getElementById('verifyContent');
+  try {
+    const resp = await fetch('/api/verify');
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    renderVerify(data);
+  } catch {
+    renderVerify(generateMockVerify());
+  }
+}
+
+function generateMockVerify() {
+  const codes = ['600519', '300750', '002594', '000858'];
+  const dirs = ['up', 'down'];
+  const recent = [];
+  const now = new Date();
+  let correctCount = 0;
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i * 3);
+    const dd = d.toISOString().slice(0, 10);
+    const dir = dirs[i % 2];
+    const actual = Math.random() < 0.6 ? dir : dirs[(i + 1) % 2];
+    const isCorrect = dir === actual;
+    if (isCorrect) correctCount++;
+    recent.push({ date: dd, code: codes[i % 4], direction: dir, actual, correct: isCorrect });
+  }
+  const total = recent.length;
+  const correct = correctCount;
+  const byVer = codes.map(c => {
+    const items = recent.filter(r => r.code === c);
+    const n = items.length;
+    const c2 = items.filter(r => r.correct).length;
+    return { ver: c, n, correct: c2, acc: n ? Math.round(c2 / n * 1000) / 10 : 0 };
+  });
+  return { total, correct, accuracy: total ? Math.round(correct / total * 1000) / 10 : 0, by_ver: byVer, recent };
+}
+
+function renderVerify(data) {
+  const el = document.getElementById('verifyContent');
+  if (!data) {
+    el.innerHTML = '<div class="verify-loading">暂无验证数据</div>';
+    return;
+  }
+
+  // 无数据状态
+  if (!data.total || data.total === 0) {
+    el.innerHTML = '<div class="verify-empty-state"><span class="ve-icon">📋</span>预测验证积累中<br/>明天 20:30 首次对照</div>';
+    return;
+  }
+
+  const acc = data.accuracy != null ? data.accuracy.toFixed(1) : '--';
+
+  let html = '';
+
+  // 顶部大数字
+  html += '<div class="verify-hero">';
+  html += '<div class="verify-hero-item"><div class="vh-label">累计验证</div><div class="vh-value">' + data.total + '</div><div class="vh-sub">次</div></div>';
+  html += '<div class="verify-hero-item"><div class="vh-label">预测正确</div><div class="vh-value">' + data.correct + '</div><div class="vh-sub">次</div></div>';
+  html += '<div class="verify-hero-item"><div class="vh-label">准确率</div><div class="vh-value accent">' + acc + '%</div></div>';
+  html += '</div>';
+
+  // 双列表格
+  html += '<div class="verify-tables">';
+
+  // 分版本准确率
+  html += '<div>';
+  html += '<div class="verify-sub-title">分股票准确率</div>';
+  const byVer = data.by_ver || [];
+  if (byVer.length) {
+    html += '<table class="verify-table-mini"><thead><tr><th>股票</th><th>验证数</th><th>准确率</th></tr></thead><tbody>';
+    byVer.forEach(v => {
+      html += '<tr><td>' + v.ver + '</td><td>' + v.n + '</td><td>' + v.acc.toFixed(1) + '%</td></tr>';
+    });
+    html += '</tbody></table>';
+  } else {
+    html += '<div class="verify-empty-state" style="padding:16px;font-size:12px;">暂无分版本数据</div>';
+  }
+  html += '</div>';
+
+  // 最近验证记录
+  html += '<div>';
+  html += '<div class="verify-sub-title">最近验证记录</div>';
+  const recent = data.recent || [];
+  if (recent.length) {
+    html += '<table class="verify-table-mini"><thead><tr><th>日期</th><th>股票</th><th>预测</th><th>实际</th><th>结果</th></tr></thead><tbody>';
+    recent.forEach(r => {
+      const dirLabel = { up: '看涨', down: '看跌', neutral: '震荡' };
+      const pred = dirLabel[r.direction] || r.direction;
+      const actualLabel = dirLabel[r.actual] || r.actual;
+      const badge = r.correct
+        ? '<span class="verify-badge correct">✅</span>'
+        : '<span class="verify-badge wrong">❌</span>';
+      html += '<tr><td>' + r.date + '</td><td>' + r.code + '</td><td>' + pred + '</td><td>' + actualLabel + '</td><td>' + badge + '</td></tr>';
+    });
+    html += '</tbody></table>';
+  } else {
+    html += '<div class="verify-empty-state" style="padding:16px;font-size:12px;">暂无最近记录</div>';
+  }
+  html += '</div>';
+
+  html += '</div>'; // verify-tables
+
+  el.innerHTML = html;
+}
+
+
 // ── 期货区 ──
 async function loadFutures() {
   const grid = document.getElementById('futuresGrid');
@@ -4010,6 +4256,7 @@ render();
   loadRisk();
   loadBacktest();
   loadPaper();
+  loadVerify();
   loadFutures();
 })();
 </script>

@@ -139,6 +139,23 @@ def api_paper():
             pass
     return jsonify(out)
 
+@app.route('/api/verify')
+def api_verify():
+    """预测验证统计（累计准确率/分版本）"""
+    conn = get_conn()
+    total = conn.execute("SELECT COUNT(*), SUM(correct) FROM predictions WHERE correct IS NOT NULL").fetchone()
+    by_ver = conn.execute("SELECT code, COUNT(*), SUM(correct) FROM predictions WHERE correct IS NOT NULL GROUP BY code").fetchall()
+    recent = conn.execute("SELECT date, code, direction, confidence, actual_direction, correct FROM predictions WHERE correct IS NOT NULL ORDER BY id DESC LIMIT 10").fetchall()
+    conn.close()
+    return jsonify({
+        'total': total[0] or 0,
+        'correct': total[1] or 0,
+        'accuracy': round((total[1] / total[0] * 100), 1) if total and total[0] else None,
+        'by_ver': [{'ver': v['code'], 'n': v[1], 'correct': v[2], 'acc': round(v[2] / v[1] * 100, 1) if v[1] else 0} for v in by_ver],
+        'recent': [{'date': r['date'], 'code': r['code'], 'direction': r['direction'],
+                    'actual': r['actual_direction'], 'correct': r['correct']} for r in recent],
+    })
+
 @app.route('/api/backtest')
 def api_backtest():
     """策略回测汇总（10 策略——胜率/平均超额）"""
