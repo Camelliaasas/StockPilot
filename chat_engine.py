@@ -257,6 +257,24 @@ def chat(message):
             lines.append(f'  {d.strftime("%m-%d")}（{delta}天后）: {desc}')
         lines.append('💡 数据发布日波动加大——注意仓位')
         return '\n'.join(lines)
+    # 板块意图
+    if '板块' in message or '轮动' in message:
+        from sector_radar import sector_radar
+        r = sector_radar()
+        if 'error' in r:
+            return f'板块数据不可用: {r["error"]}'
+        lines = ['📡 板块轮动雷达:']
+        lines.append('\n🔥 强势板块:')
+        for t in r['top'][:5]:
+            lines.append(f"· {t['name']} {t['change']:+.1f}%（{t['amount']}亿）")
+        lines.append('\n💧 资金聚焦:')
+        for t in r['hot'][:3]:
+            lines.append(f"· {t['name']} {t['amount']}亿（{t['change']:+.1f}%）")
+        lines.append('\n❄️ 弱势:')
+        for t in r['bottom'][:3]:
+            lines.append(f"· {t['name']} {t['change']:+.1f}%")
+        lines.append('\n⚠️ 仅供参考')
+        return '\n'.join(lines)
     # 政策意图（"政策/新闻"）
     if '政策' in message or '新闻' in message:
         from policy_tracker import scan_policy
