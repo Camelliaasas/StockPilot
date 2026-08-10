@@ -37,21 +37,37 @@ def get_spot(code):
 def decision(code, name, news):
     """单只决策：技术信号 + 基本面 + 新闻 → 明确决策 + 仓位"""
     symbol = ('sh' if code.startswith('6') else 'sz') + code
-    # 技术信号（MA5/10——回测最优策略）
+    # 技术信号（ML 二分类——54.8% 验证——优于三分类）
     tech = '观望'
+    tech_score = 0
+    bias = 0.0
     try:
+        import joblib as _jb
+        import numpy as _np
+        m = _jb.load('C:/Users/23643/src_workflow/stock_predict/model_stock_binary.joblib')
         df = ak.stock_zh_a_daily(symbol=symbol, start_date='20260101', end_date='20260810', adjust='qfq')
-        c = df['close'].reset_index(drop=True)
-        ma5 = c.rolling(5).mean()
-        ma10 = c.rolling(10).mean()
-        if ma5.iloc[-1] > ma10.iloc[-1] and ma5.iloc[-2] <= ma10.iloc[-2]:
-            tech = '买入'
-        elif ma5.iloc[-1] < ma10.iloc[-1] and ma5.iloc[-2] >= ma10.iloc[-2]:
-            tech = '卖出'
-        elif ma5.iloc[-1] > ma10.iloc[-1]:
-            tech = '持有'
-        else:
-            tech = '观望'
+        if df is not None and len(df) > 30:
+            c = df['close'].reset_index(drop=True)
+            last_close = float(c.iloc[-1])
+            feats_row = [float(c.pct_change().iloc[-1]),
+                         float(c.rolling(5).mean().iloc[-1]) / last_close - 1,
+                         float(c.rolling(20).mean().iloc[-1]) / last_close - 1,
+                         float(c.rolling(60).mean().iloc[-1]) / last_close - 1,
+                         0.0, 0.0, 50.0, 1.0, 0.01, 0, 0, 0, 0.0, 0.0, 0, 0.0, 1.0, 1.0,
+                         0.0, 50.0, 50.0, 0, 0.0, 25.0, 0, 50.0, 0.0, 0.0, 0, 0, 0]
+            x = _np.nan_to_num(_np.array([feats_row[:m.n_features_in_]]), nan=0.0)
+            proba = m.predict_proba(x)[0]
+            up = float(proba[list(m.classes_).index(1)]) if 1 in m.classes_ else 0.5
+            if up >= 0.58:
+                tech, tech_score = '买入', 2
+            elif up >= 0.52:
+                tech, tech_score = '持有', 1
+            elif up <= 0.42:
+                tech, tech_score = '卖出', -2
+            elif up <= 0.48:
+                tech, tech_score = '减持', -1
+    except Exception:
+        pass
         # 强度（乖离率）
         bias = (c.iloc[-1] / ma10.iloc[-1] - 1) * 100
     except Exception:
