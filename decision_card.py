@@ -118,16 +118,30 @@ def decision(code, name, news):
     return {'code': code, 'name': name, 'tech': tech, 'fund': fund, 'news': news_dir,
             'score': score, 'action': act, 'position': pos, 'bias': bias, 'inst': inst, 'val': val, 'chip': chip}
 
+def get_watchlist():
+    """自选股（DB——用户可自定义）"""
+    try:
+        from db import get_conn
+        conn = get_conn()
+        rows = conn.execute('SELECT code, name FROM watchlist ORDER BY added_at').fetchall()
+        conn.close()
+        if rows:
+            return [(r['code'], r['name']) for r in rows]
+    except Exception:
+        pass
+    return WATCHLIST  # 兜底默认
+
 def main():
     try:
         news = [f'{r["标题"]}' for _, r in ak.stock_info_global_em().head(8).iterrows()]
     except Exception:
         news = []
+    watch = get_watchlist()
     print('=' * 62)
     print('📋 每日决策卡（技术MA5/10 + 基本面 + 新闻情绪 → 明确决策）')
     print('=' * 62)
     cards = []
-    for code, name in WATCHLIST:
+    for code, name in watch:
         spot = get_spot(code)
         d = decision(code, name, news)
         price = spot['price'] if spot else '—'

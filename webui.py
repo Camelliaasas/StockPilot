@@ -93,6 +93,36 @@ def api_trend():
     top_small = sorted(small.items(), key=lambda x: -x[1])[:8]
     return jsonify({'big': big, 'mid': mid, 'small': [{'sector': s, 'score': v} for s, v in top_small]})
 
+@app.route('/api/watchlist', methods=['GET', 'POST', 'DELETE'])
+def api_watchlist():
+    """自选股管理：GET 列表 / POST 添加 / DELETE 删除"""
+    conn = get_conn()
+    if request.method == 'GET':
+        rows = conn.execute('SELECT code, name FROM watchlist ORDER BY added_at').fetchall()
+        conn.close()
+        return jsonify([{'code': r['code'], 'name': r['name']} for r in rows])
+    if request.method == 'POST':
+        d = request.get_json(silent=True) or {}
+        code = str(d.get('code', '')).strip()
+        name = str(d.get('name', '')).strip() or code
+        if not code:
+            conn.close()
+            return jsonify({'error': '缺少代码'}), 400
+        conn.execute('INSERT OR IGNORE INTO watchlist (code, name) VALUES (?,?)', (code, name))
+        conn.commit()
+        conn.close()
+        return jsonify({'ok': True})
+    # DELETE
+    d = request.get_json(silent=True) or {}
+    code = str(d.get('code', '')).strip()
+    if not code:
+        conn.close()
+        return jsonify({'error': '缺少代码'}), 400
+    conn.execute('DELETE FROM watchlist WHERE code=?', (code,))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
+
 @app.route('/api/oneline')
 def api_oneline():
     """一句话看盘"""

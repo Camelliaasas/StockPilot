@@ -64,6 +64,16 @@ def main():
     print('=' * 56)
     print(f'📊 分级预测报告（{target}）')
     print('=' * 56)
+    # 宏观环境（新增——预测输入）
+    try:
+        from macro_env import macro_env
+        me = macro_env()
+        print(f'\n🌐 【宏观环境】')
+        for p in me.get('parts', []):
+            print(f'  · {p}')
+        print(f'  → {me.get("verdict", "")}')
+    except Exception as e:
+        print(f'\n🌐 宏观环境获取失败: {str(e)[:40]}')
     print(f'\n📰 事件分布：大 {len(big)} 条 | 中 {len(mid)} 条 | 小 {len(small)} 条')
     # 大事件 → 中期趋势
     if big:
