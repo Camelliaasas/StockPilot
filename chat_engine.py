@@ -155,6 +155,20 @@ def chat(message):
         lines.append(f'→ {e.get("verdict", "")}')
         lines.append('⚠️ 宏观判断为参考——非投资建议')
         return '\n'.join(lines)
+    # 港股意图
+    if '港股' in message:
+        from hk_stock import analyze_hk, HK_STOCKS
+        lines = ['📊 港股分析（趋势+动量）:']
+        for symbol, name in HK_STOCKS:
+            try:
+                r = analyze_hk(symbol, name)
+                if r and 'error' not in r:
+                    icon = {'看多': '🔴', '看空': '🟢', '震荡': '⚪'}[r['signal']]
+                    lines.append(f"{icon} {r['name']} {r['cur']} | 20日{r['ret_20']:+.1f}% | {r['trend']} → {r['signal']}({r['conf']}%)")
+            except Exception:
+                pass
+        lines.append('⚠️ 仅供参考——非投资建议')
+        return '\n'.join(lines)
     # 美股意图
     if '美股' in message:
         from us_stock import analyze_us, US_STOCKS
