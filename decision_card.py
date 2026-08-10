@@ -90,18 +90,33 @@ def decision(code, name, news):
             elif p > 80: val_score = -1; val += '（偏贵）'
     except Exception:
         pass
+    # 筹码信号（股东户数变化）
+    chip = ''
+    chip_score = 0
+    try:
+        from chip_signal import chip_signal as chip_fn
+        cr = chip_fn(code, name)
+        sig = cr.get('signal', '')
+        if '集中' in sig:
+            chip_score = 1
+            chip = sig
+        elif '分散' in sig:
+            chip_score = -1
+            chip = sig
+    except Exception:
+        pass
     # 决策表
     score = 0
     score += 2 if tech == '买入' else (1 if tech == '持有' else (-1 if tech == '卖出' else 0))
     score += 1 if fund == '多' else (-1 if fund == '空' else 0)
     score += 1 if news_dir == '看多' else (-1 if news_dir == '看空' else 0)
-    score += val_score
+    score += val_score + chip_score
     if score >= 3: act, pos = '买入', '30%'
     elif score >= 1: act, pos = '持有', '20%'
     elif score <= -2: act, pos = '卖出', '0%'
     else: act, pos = '观望', '10%'
     return {'code': code, 'name': name, 'tech': tech, 'fund': fund, 'news': news_dir,
-            'score': score, 'action': act, 'position': pos, 'bias': bias, 'inst': inst, 'val': val}
+            'score': score, 'action': act, 'position': pos, 'bias': bias, 'inst': inst, 'val': val, 'chip': chip}
 
 def main():
     try:
@@ -124,6 +139,8 @@ def main():
             print(f"   🏦 机构: {d['inst']}")
         if d.get('val'):
             print(f"   💰 估值: {d['val']}")
+        if d.get('chip'):
+            print(f"   🎯 筹码: {d['chip']}")
         print(f"   技术[{d['tech']}] 基本面[{d['fund']}] 新闻[{d['news']}] 综合分[{d['score']:+d}]")
         print(f"   → 决策：{d['action']} | 建议仓位 {d['position']}")
         cards.append(d)
