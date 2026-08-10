@@ -1,5 +1,6 @@
 """AI 聊天引擎：自然语言问题 → 意图识别 → 数据拉取 → 分析师回答"""
 import sys, os, json, re
+from datetime import datetime
 import akshare as ak
 import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -243,6 +244,18 @@ def chat(message):
             except Exception:
                 pass
         lines.append('⚠️ 仅供参考——非投资建议')
+        return '\n'.join(lines)
+    # 事件日历意图
+    if '日历' in message or '事件' in message or '数据发布' in message:
+        from event_calendar import next_events
+        ev = next_events()
+        lines = ['📅 最近重要事件:']
+        if not ev:
+            lines.append('  （近期无重大事件窗口）')
+        for d, desc in ev:
+            delta = (d - datetime.now()).days
+            lines.append(f'  {d.strftime("%m-%d")}（{delta}天后）: {desc}')
+        lines.append('💡 数据发布日波动加大——注意仓位')
         return '\n'.join(lines)
     # 政策意图（"政策/新闻"）
     if '政策' in message or '新闻' in message:

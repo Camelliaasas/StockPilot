@@ -29,6 +29,18 @@ def main():
         lines.append(f'**📌 一句话看盘**: {one_line()}')
     except Exception:
         pass
+    # 事件日历
+    try:
+        from event_calendar import next_events
+        ev = next_events()
+        if ev:
+            lines.append('')
+            lines.append('**📅 近期事件提醒**')
+            for d, desc in ev[:3]:
+                delta = (d - datetime.now()).days
+                lines.append(f'· {d.strftime("%m-%d")}（{delta}天）: {desc}')
+    except Exception:
+        pass
     # 决策卡
     lines.append('')
     lines.append('**📋 自选决策**')
