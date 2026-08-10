@@ -125,6 +125,24 @@ def api_curve():
             pass
     return jsonify(out)
 
+@app.route('/api/backtest')
+def api_backtest():
+    """策略回测汇总（10 策略——胜率/平均超额）"""
+    # 数据来自真实回测（backtest_multi + backtest_batch2 结果）
+    results = [
+        {'strategy': 'MACD金叉', 'wins': 8, 'total': 8, 'excess': 870.5},
+        {'strategy': 'MACD+RSI过滤', 'wins': 8, 'total': 8, 'excess': 374.9},
+        {'strategy': '海龟突破', 'wins': 8, 'total': 8, 'excess': 229.6},
+        {'strategy': '放量突破', 'wins': 8, 'total': 8, 'excess': 186.4},
+        {'strategy': '双均线5/20', 'wins': 8, 'total': 8, 'excess': 124.9},
+        {'strategy': '双均线5/10', 'wins': 8, 'total': 8, 'excess': 197.7},
+        {'strategy': '动量20日', 'wins': 7, 'total': 8, 'excess': 112.3},
+        {'strategy': '多头排列', 'wins': 5, 'total': 8, 'excess': 7.2},
+        {'strategy': 'RSI超买卖', 'wins': 0, 'total': 8, 'excess': -53.9},
+        {'strategy': '布林带', 'wins': 0, 'total': 8, 'excess': -66.1},
+    ]
+    return jsonify({'results': results, 'note': '2021-2026 回测——滑点0.1%+手续费万2.5——趋势家族有效/均值回归失效'})
+
 @app.route('/api/portfolio')
 def api_portfolio():
     """组合分析（自选 5 只等权）"""
