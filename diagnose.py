@@ -32,6 +32,35 @@ def diagnose(code, name=''):
             amp = ((df['high'] - df['low']) / c).tail(20).mean() * 100
             report['scores']['波动风险'] = min(amp * 8, 100)
             report['summary'].append(f'股价{cur:.2f} | 20日涨幅{mom:+.1f}% | 20日均线{"上" if cur>ma20 else "下"}方')
+            # 扩展指标描述（KDJ/ADX/BOLL）
+            try:
+                # KDJ
+                low9 = df['low'].rolling(9).min()
+                high9 = df['high'].rolling(9).max()
+                rsv = (df['close'] - low9) / (high9 - low9).replace(0, np.nan) * 100
+                k = rsv.ewm(com=2).mean().iloc[-1]
+                j = (3*k - 2*rsv.ewm(com=2).mean().ewm(com=2).mean()).iloc[-1] if hasattr(rsv.ewm(com=2).mean().ewm(com=2).mean(), 'iloc') else 0
+                if k > 80: kdj_txt = 'KDJ超买'
+                elif k < 20: kdj_txt = 'KDJ超卖'
+                else: kdj_txt = 'KDJ中性'
+                # BOLL 位置
+                mid = c.rolling(20).mean()
+                std = c.rolling(20).std()
+                boll_pos = (cur - mid.iloc[-1]) / std.iloc[-1] if std.iloc[-1] else 0
+                boll_txt = '触及上轨' if boll_pos > 1.8 else ('触及下轨' if boll_pos < -1.8 else '轨道中')
+                # ADX 趋势强度
+                up = df['high'].diff()
+                dn = -df['low'].diff()
+                tr = pd.concat([df['high']-df['low'], (df['high']-df['close'].shift()).abs(), (df['low']-df['close'].shift()).abs()], axis=1).max(axis=1)
+                atr = tr.ewm(alpha=1/14).mean().replace(0, np.nan)
+                pdi = 100 * up.clip(lower=0).ewm(alpha=1/14).mean() / atr
+                mdi = 100 * dn.clip(lower=0).ewm(alpha=1/14).mean() / atr
+                dx = 100 * (pdi-mdi).abs() / (pdi+mdi).replace(0, np.nan)
+                adx_v = dx.ewm(alpha=1/14).mean().iloc[-1]
+                adx_txt = '强趋势' if adx_v > 25 else '弱趋势/震荡'
+                report['summary'].append(f'{kdj_txt} | BOLL{boll_txt} | ADX {adx_txt}({adx_v:.0f})')
+            except Exception:
+                pass
     except Exception as e:
         report['summary'].append(f'技术数据失败: {str(e)[:40]}')
     # 2. 基本面（财务）

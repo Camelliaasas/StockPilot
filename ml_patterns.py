@@ -45,6 +45,50 @@ def add_features(df):
     df['mom20'] = g['close'].transform(lambda x: x.pct_change(20))
     df['bias60'] = (df['close'] - df['ma60']) / df['ma60']
     df['hh20_break'] = (df['close'] > g['close'].transform(lambda x: x.rolling(20).max().shift(1))).astype(int)
+    # 扩展指标：BOLL / KDJ / OBV / CCI / ADX
+    def boll(x):
+        mid = x.rolling(20).mean()
+        std = x.rolling(20).std()
+        return (x - mid) / std.replace(0, np.nan)  # 布林带宽位置（-2~+2）
+    df['boll_pos'] = g['close'].transform(boll)
+    def kdj(df_g):
+        low9 = df_g['low'].rolling(9).min()
+        high9 = df_g['high'].rolling(9).max()
+        rsv = (df_g['close'] - low9) / (high9 - low9).replace(0, np.nan) * 100
+        k = rsv.ewm(com=2).mean()
+        d = k.ewm(com=2).mean()
+        j = 3 * k - 2 * d
+        return pd.DataFrame({'k': k, 'd': d, 'j': j}, index=df_g.index)
+    kd = g.apply(kdj)
+    df['kdj_k'] = kd['k'].values if hasattr(kd, 'values') else kd['k']
+    df['kdj_j'] = kd['j'].values if hasattr(kd, 'values') else kd['j']
+    # OBV（能量潮——量价）
+    def obv(df_g):
+        sign = np.sign(df_g['close'].diff()).fillna(0)
+        return (sign * df_g['volume']).cumsum()
+    df['obv'] = g.apply(obv).values
+    df['obv_trend'] = (df['obv'] > df['obv'].rolling(10).mean()).astype(int)
+    # CCI（顺势指标）
+    def cci(df_g):
+        tp = (df_g['high'] + df_g['low'] + df_g['close']) / 3
+        ma = tp.rolling(14).mean()
+        md = tp.rolling(14).apply(lambda x: np.abs(x - x.mean()).mean())
+        return (tp - ma) / (0.015 * md.replace(0, np.nan))
+    df['cci'] = g.apply(cci).values
+    # ADX（趋势强度——简化 DMI）
+    def adx(df_g):
+        up = df_g['high'].diff()
+        dn = -df_g['low'].diff()
+        plus = pd.Series(np.where((up > dn) & (up > 0), up, 0.0), index=df_g.index)
+        minus = pd.Series(np.where((dn > up) & (dn > 0), dn, 0.0), index=df_g.index)
+        tr = pd.concat([df_g['high'] - df_g['low'], (df_g['high'] - df_g['close'].shift()).abs(), (df_g['low'] - df_g['close'].shift()).abs()], axis=1).max(axis=1)
+        atr = tr.ewm(alpha=1/14).mean().replace(0, np.nan)
+        pdi = 100 * plus.ewm(alpha=1/14).mean() / atr
+        mdi = 100 * minus.ewm(alpha=1/14).mean() / atr
+        dx = 100 * (pdi - mdi).abs() / (pdi + mdi).replace(0, np.nan)
+        return dx.ewm(alpha=1/14).mean()
+    df['adx'] = g.apply(adx).values
+    df['adx_strong'] = (df['adx'] > 25).astype(int)
     # 涨跌停标记
     df['limit_up'] = (df['ret'] > 0.095).astype(int)
     # 未来 5 日收益（标签）
