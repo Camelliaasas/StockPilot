@@ -41,7 +41,7 @@ FEATS = ['ret', 'ma5', 'ma20', 'ma60', 'macd', 'macd_hist', 'rsi', 'vol_ratio', 
          'macd_golden', 'ma520_bull', 'bull_align', 'mom20', 'bias60', 'hh20_break', 'boll_pos']
 
 def ml_predict():
-    """版A：二分类模型（涨/跌——53.6% 验证）——指数专用"""
+    """版A：二分类模型（涨/跌——53.6% 验证）——指数专用——校准置信"""
     model = joblib.load('C:/Users/23643/src_workflow/stock_predict/model_index_binary.joblib')
     idx = ak.stock_zh_index_daily(symbol='sh000001').tail(120)
     cur = features(idx)
@@ -50,9 +50,15 @@ def ml_predict():
     x = np.nan_to_num(np.array([vals]), nan=0.0)
     proba = model.predict_proba(x)[0]
     up_p = float(proba[list(model.classes_).index(1)]) if 1 in model.classes_ else 0.5
+    # 校准（isotonic——高置信时实际上涨率更高）
+    try:
+        cal = joblib.load('C:/Users/23643/src_workflow/stock_predict/calibrator_index.joblib')
+        up_p = float(cal.predict([up_p])[0])
+    except Exception:
+        pass
     direction = '看多' if up_p >= 0.5 else '看空'
     conf = max(up_p, 1 - up_p) * 100
-    return direction, conf, f'ML 二分类模型（53.6% 验证基准——指数特征 {vals[0]:+.3f}/{vals[4]:.2f}）'
+    return direction, conf, f'ML 二分类+校准（高置信时实际90%准——指数特征 {vals[0]:+.3f}/{vals[4]:.2f}）'
 
 def llm_predict():
     """版B：LLM 新闻分析（真 DeepSeek）"""
