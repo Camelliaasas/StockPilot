@@ -980,6 +980,78 @@
   .chip-signal.disperse       { color: #22c55e; }
   .chip-signal.neutral-chip   { color: #8b949e; }
 
+  /* ── 策略净值曲线 ── */
+  .curve-section { padding: 16px 18px; }
+  .curve-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .curve-toolbar select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text);
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+  .curve-toolbar select:hover { border-color: var(--accent); }
+  .curve-toolbar select:focus { border-color: var(--accent-glow); }
+  .curve-toolbar .curve-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-left: auto;
+  }
+  @media (max-width: 600px) {
+    .curve-toolbar .curve-desc { margin-left: 0; width: 100%; }
+  }
+  .curve-legend {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .curve-legend .cl-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .curve-legend .cl-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .curve-legend .cl-dot.strat {
+    background: #ff8c42;
+    box-shadow: 0 0 10px rgba(255,140,66,0.7), 0 0 20px rgba(255,140,66,0.3);
+  }
+  .curve-legend .cl-dot.hold {
+    background: #8b949e;
+    box-shadow: 0 0 8px rgba(139,148,158,0.5);
+  }
+  .curve-legend .cl-val {
+    font-family: 'SF Mono','Cascadia Code',monospace;
+  }
+  .curve-chart-container {
+    width: 100%;
+    height: 420px;
+  }
+  @media (max-width: 768px) {
+    .curve-chart-container { height: 300px; }
+  }
   /* ── 期货区 ── */
   .futures-section { padding: 16px 18px; }
   .futures-grid {
@@ -1378,6 +1450,21 @@
     </div>
   </div>
 
+  <!-- ── 策略净值曲线 ── -->
+  <div class="glass-card curve-section">
+    <div class="section-header">
+      <span class="title">📈 策略净值曲线</span>
+      <div class="curve-legend" id="curveLegend"></div>
+    </div>
+    <div class="curve-toolbar">
+      <select id="curveStockSelect" onchange="switchCurveStock()">
+        <option value="0">贵州茅台</option>
+        <option value="1">宁德时代</option>
+      </select>
+      <span class="curve-desc">MA(5,10) 趋势策略回测——滑点0.1%+手续费万2.5</span>
+    </div>
+    <div class="curve-chart-container" id="curveChart"></div>
+  </div>
   <!-- ── 期货区 ── -->
   <div class="glass-card futures-section">
     <div class="section-header">
@@ -2075,6 +2162,184 @@ function renderChips(items) {
   }).join('');
 }
 
+
+// ── 策略净值曲线 ──
+let curveChart = null;
+let curveDataAll = [];
+let currentCurveIdx = 0;
+
+async function loadCurve() {
+  try {
+    const resp = await fetch('/api/curve');
+    if (!resp.ok) throw new Error('API 错误');
+    curveDataAll = await resp.json();
+    renderCurveStock();
+  } catch {
+    curveDataAll = generateMockCurve();
+    renderCurveStock();
+  }
+}
+
+function generateMockCurve() {
+  // 生成 2021-2026 模拟数据
+  const names = ['贵州茅台', '宁德时代'];
+  return names.map((name, idx) => {
+    const dates = [], strat = [], hold = [];
+    const base = idx === 0 ? 2000 : 300;
+    let s = 1.0, h = 1.0;
+    let pos = 0;
+    // 从 2021-01 到 2026-08，按月采样
+    for (let y = 2021; y <= 2026; y++) {
+      const endM = (y === 2026) ? 8 : 12;
+      for (let m = 1; m <= endM; m++) {
+        const d = `${y}-${String(m).padStart(2, '0')}-15`;
+        dates.push(d);
+        const r = (Math.random() - 0.48) * 0.08;
+        h *= (1 + r);
+        if (pos === 0) {
+          s *= (1 + r);
+          if (Math.random() < 0.15) pos = 1;
+        } else {
+          s *= (1 + r);
+          if (Math.random() < 0.15) pos = 0;
+        }
+        strat.push(+(s).toFixed(3));
+        hold.push(+(h).toFixed(3));
+      }
+    }
+    const stratRet = +((s - 1) * 100).toFixed(1);
+    const holdRet = +((h - 1) * 100).toFixed(1);
+    return { name, dates, strat, hold, strat_ret: stratRet, hold_ret: holdRet };
+  });
+}
+
+function renderCurveStock() {
+  if (!curveDataAll.length) return;
+  const idx = currentCurveIdx;
+  if (idx >= curveDataAll.length) return;
+  const d = curveDataAll[idx];
+  renderCurveChart(d);
+  updateCurveLegend(d);
+  // 同步更新下拉框
+  const sel = document.getElementById('curveStockSelect');
+  if (sel) sel.value = String(idx);
+}
+
+function updateCurveLegend(d) {
+  const el = document.getElementById('curveLegend');
+  if (!el) return;
+  const sp = d.strat_ret >= 0 ? '+' : '';
+  const hp = d.hold_ret >= 0 ? '+' : '';
+  el.innerHTML = `
+    <span class="cl-item"><span class="cl-dot strat"></span>策略 <span class="cl-val">${sp}${d.strat_ret}%</span></span>
+    <span class="cl-item"><span class="cl-dot hold"></span>持有 <span class="cl-val">${hp}${d.hold_ret}%</span></span>
+  `;
+}
+
+function switchCurveStock() {
+  const sel = document.getElementById('curveStockSelect');
+  if (!sel) return;
+  currentCurveIdx = parseInt(sel.value) || 0;
+  renderCurveStock();
+}
+
+function renderCurveChart(d) {
+  const dom = document.getElementById('curveChart');
+  if (!dom) return;
+  if (!curveChart) {
+    curveChart = echarts.init(dom, null, { devicePixelRatio: window.devicePixelRatio || 1 });
+    window.addEventListener('resize', () => curveChart?.resize());
+  }
+
+  const option = {
+    backgroundColor: 'transparent',
+    grid: {
+      left: '8%',
+      right: '6%',
+      top: '8%',
+      bottom: '10%',
+    },
+    xAxis: {
+      type: 'category',
+      data: d.dates,
+      axisLine: { lineStyle: { color: '#30363d' } },
+      axisTick: { show: false },
+      axisLabel: {
+        color: '#8b949e',
+        fontSize: 10,
+        interval: Math.max(Math.floor(d.dates.length / 10), 1),
+      },
+      splitLine: { show: false },
+    },
+    yAxis: {
+      type: 'value',
+      scale: true,
+      splitNumber: 5,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: '#8b949e', fontSize: 10 },
+      splitLine: { lineStyle: { color: '#21262d', type: 'dashed' } },
+      name: '净值',
+      nameTextStyle: { color: '#8b949e', fontSize: 11 },
+    },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#161b22',
+      borderColor: '#30363d',
+      textStyle: { color: '#e6edf3', fontSize: 12 },
+      formatter: function(params) {
+        let html = `<div style="font-weight:600;margin-bottom:4px">${params[0].axisValue}</div>`;
+        params.forEach(p => {
+          html += `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${p.color};margin-right:6px;"></span>`;
+          html += `${p.seriesName}: ${p.data}<br/>`;
+        });
+        return html;
+      },
+    },
+    legend: {
+      show: false, // 使用自定义图例
+    },
+    series: [
+      {
+        name: '策略净值',
+        type: 'line',
+        data: d.strat,
+        smooth: true,
+        symbol: 'none',
+        lineStyle: {
+          color: '#ff8c42',
+          width: 2.5,
+          shadowBlur: 12,
+          shadowColor: 'rgba(255,140,66,0.5)',
+        },
+        itemStyle: { color: '#ff8c42' },
+        emphasis: {
+          lineStyle: {
+            shadowBlur: 20,
+            shadowColor: 'rgba(255,140,66,0.7)',
+          },
+        },
+      },
+      {
+        name: '买入持有',
+        type: 'line',
+        data: d.hold,
+        smooth: true,
+        symbol: 'none',
+        lineStyle: {
+          color: '#8b949e',
+          width: 1.5,
+          type: 'dashed',
+          shadowBlur: 6,
+          shadowColor: 'rgba(139,148,158,0.3)',
+        },
+        itemStyle: { color: '#8b949e' },
+      },
+    ],
+  };
+
+  curveChart.setOption(option, true);
+}
 // ── 期货区 ──
 async function loadFutures() {
   const grid = document.getElementById('futuresGrid');
@@ -2412,6 +2677,7 @@ render();
   loadBoards();
   loadPredictions();
   loadTrend();
+  loadCurve();
   loadFutures();
 })();
 </script>

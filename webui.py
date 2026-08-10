@@ -93,6 +93,20 @@ def api_trend():
     top_small = sorted(small.items(), key=lambda x: -x[1])[:8]
     return jsonify({'big': big, 'mid': mid, 'small': [{'sector': s, 'score': v} for s, v in top_small]})
 
+@app.route('/api/curve')
+def api_curve():
+    """策略净值曲线（MA5/10 vs 买入持有——茅台/宁德）"""
+    from backtest_curve import curve
+    out = []
+    for code, name in [('600519', '贵州茅台'), ('300750', '宁德时代')]:
+        try:
+            r = curve(code, name)
+            if r and 'error' not in r:
+                out.append(r)
+        except Exception:
+            pass
+    return jsonify(out)
+
 @app.route('/api/macro')
 def api_macro():
     """宏观环境"""
