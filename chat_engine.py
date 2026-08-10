@@ -257,6 +257,26 @@ def chat(message):
             lines.append(f'  {d.strftime("%m-%d")}（{delta}天后）: {desc}')
         lines.append('💡 数据发布日波动加大——注意仓位')
         return '\n'.join(lines)
+    # 导入意图（"导入自选 代码1,代码2"）
+    if '导入' in message:
+        import re as _re
+        codes = _re.findall(r'\d{6}', message)
+        if not codes:
+            return '请提供股票代码（如：导入自选 600519,300750）'
+        from db import get_conn
+        conn = get_conn()
+        imported = []
+        try:
+            all_stocks = _load_all_stocks()
+            name_by_code = {v.replace('sh', '').replace('sz', ''): k for k, v in all_stocks.items()}
+            for code in codes[:20]:
+                name = name_by_code.get(code, code)
+                conn.execute('INSERT OR IGNORE INTO watchlist (code, name) VALUES (?,?)', (code, name))
+                imported.append(f'{name}（{code}）')
+        finally:
+            conn.commit()
+            conn.close()
+        return f'✅ 已导入 {len(imported)} 只自选:\n' + '\n'.join(f'· {n}' for n in imported)
     # 形态意图
     if '形态' in message or '技术面' in message:
         from pattern_recognition import scan_watchlist
