@@ -89,6 +89,20 @@ def add_features(df):
         return dx.ewm(alpha=1/14).mean()
     df['adx'] = g.apply(adx).values
     df['adx_strong'] = (df['adx'] > 25).astype(int)
+    # 更多指标：WR 威廉 / ROC 变动率 / BIAS20 / 量价背离
+    def wr(df_g):
+        hh10 = df_g['high'].rolling(10).max()
+        ll10 = df_g['low'].rolling(10).min()
+        return (hh10 - df_g['close']) / (hh10 - ll10).replace(0, np.nan) * 100
+    df['wr'] = g.apply(wr).values
+    df['roc'] = g['close'].transform(lambda x: x.pct_change(12) * 100)
+    df['bias20'] = (df['close'] - df['ma20']) / df['ma20']
+    df['wr_oversold'] = (df['wr'] > 80).astype(int)   # 超卖
+    df['wr_overbought'] = (df['wr'] < 20).astype(int)  # 超买
+    # 量价背离（价创新高但量萎缩——顶背离）
+    df['price_high'] = (df['close'] == g['close'].transform(lambda x: x.rolling(10).max())).astype(int)
+    df['vol_shrink'] = (df['volume'] < df['vol_ma5']).astype(int)
+    df['divergence'] = ((df['price_high'] == 1) & (df['vol_shrink'] == 1)).astype(int)
     # 涨跌停标记
     df['limit_up'] = (df['ret'] > 0.095).astype(int)
     # 未来 5 日收益（标签）
