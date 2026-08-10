@@ -114,6 +114,37 @@ def chat(message):
                 r = chip_signal(code, name)
                 return f"🎯 筹码分析：{r['name']}\n{r['signal']}\n📝 {r.get('detail', '')}\n⚠️ 仅供参考"
         return '请指定股票（如：茅台筹码）'
+    # 研报意图（"研报XX"）
+    if '研报' in message:
+        from report_deep import deep_report
+        for name, code in KNOWN_STOCKS.items():
+            if name in message:
+                return deep_report(code, name)
+        return '请指定股票（如：研报茅台）'
+    # 宏观意图
+    if '宏观' in message or '大盘环境' in message:
+        from macro_env import macro_env
+        e = macro_env()
+        lines = ['🌐 宏观环境:']
+        for p in e.get('parts', []):
+            lines.append(f'  · {p}')
+        lines.append(f'→ {e.get("verdict", "")}')
+        lines.append('⚠️ 宏观判断为参考——非投资建议')
+        return '\n'.join(lines)
+    # 美股意图
+    if '美股' in message:
+        from us_stock import analyze_us, US_STOCKS
+        lines = ['📊 美股分析（趋势+动量）:']
+        for symbol, name in US_STOCKS:
+            try:
+                r = analyze_us(symbol, name)
+                if r and 'error' not in r:
+                    icon = {'看多': '🔴', '看空': '🟢', '震荡': '⚪'}[r['signal']]
+                    lines.append(f"{icon} {r['name']} ${r['cur']} | 20日{r['ret_20']:+.1f}% | {r['trend']} → {r['signal']}({r['conf']}%)")
+            except Exception:
+                pass
+        lines.append('⚠️ 仅供参考——非投资建议')
+        return '\n'.join(lines)
     # 政策意图（"政策/新闻"）
     if '政策' in message or '新闻' in message:
         from policy_tracker import scan_policy

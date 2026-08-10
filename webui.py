@@ -93,6 +93,13 @@ def api_trend():
     top_small = sorted(small.items(), key=lambda x: -x[1])[:8]
     return jsonify({'big': big, 'mid': mid, 'small': [{'sector': s, 'score': v} for s, v in top_small]})
 
+@app.route('/api/macro')
+def api_macro():
+    """宏观环境"""
+    from macro_env import macro_env
+    e = macro_env()
+    return jsonify({'parts': e.get('parts', []), 'verdict': e.get('verdict', '')})
+
 @app.route('/api/watchlist', methods=['GET', 'POST', 'DELETE'])
 def api_watchlist():
     """自选股管理：GET 列表 / POST 添加 / DELETE 删除"""

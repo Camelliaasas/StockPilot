@@ -1049,6 +1049,162 @@
     margin-top: 4px;
   }
 
+  /* ── 宏观环境区 ── */
+  .macro-section { padding: 16px 18px; }
+  .macro-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  @media (max-width: 768px) {
+    .macro-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .macro-grid { grid-template-columns: 1fr; }
+  }
+  .macro-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    text-align: center;
+    transition: all 0.25s ease;
+  }
+  .macro-card:hover {
+    border-color: rgba(110,64,201,0.4);
+    box-shadow: 0 4px 20px rgba(110,64,201,0.1);
+  }
+  .macro-card .mc-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .macro-card .mc-value {
+    font-size: 22px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono','Cascadia Code','JetBrains Mono',monospace;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .macro-card .mc-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .macro-verdict {
+    background: linear-gradient(135deg, rgba(110,64,201,0.1) 0%, rgba(59,130,246,0.06) 100%);
+    border: 1px solid rgba(110,64,201,0.25);
+    border-radius: var(--radius-sm);
+    padding: 12px 18px;
+    text-align: center;
+  }
+  .macro-verdict .mv-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-glow);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .macro-verdict .mv-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* ── 自选股管理区 ── */
+  .watchlist-section { padding: 16px 18px; }
+  .watchlist-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .watchlist-toolbar input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 8px 16px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+  }
+  .watchlist-toolbar input:focus { border-color: var(--accent); }
+  .watchlist-toolbar input::placeholder { color: #484f58; }
+  .watchlist-toolbar input.wl-code { width: 100px; }
+  .watchlist-toolbar input.wl-name { width: 130px; }
+  .btn-add {
+    background: linear-gradient(135deg, var(--accent), var(--accent-blue));
+    border: none;
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 22px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+  }
+  .btn-add:hover { opacity: 0.9; }
+  .btn-add:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .wl-table {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .wl-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 80px;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: all 0.2s;
+  }
+  .wl-row:hover {
+    border-color: rgba(110,64,201,0.4);
+    background: var(--surface-hover);
+  }
+  .wl-row .wl-code {
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+    color: var(--accent-blue);
+  }
+  .wl-row .wl-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .btn-del {
+    background: transparent;
+    border: 1px solid rgba(248,81,73,0.4);
+    color: var(--danger);
+    padding: 5px 12px;
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s;
+    white-space: nowrap;
+    justify-self: end;
+  }
+  .btn-del:hover {
+    background: rgba(248,81,73,0.12);
+    border-color: var(--danger);
+  }
+
   /* ── 骨架加载动画 ── */
   .skeleton {
     background: linear-gradient(90deg, var(--surface-hover) 25%, var(--border) 50%, var(--surface-hover) 75%);
@@ -1111,6 +1267,20 @@
     <div class="ol-loading">⏳ 加载今日核心判断...</div>
   </div>
 
+  <!-- ── 宏观环境区 ── -->
+  <div class="glass-card macro-section">
+    <div class="section-header">
+      <span class="title">🌍 宏观环境</span>
+    </div>
+    <div class="macro-grid" id="macroGrid">
+      <div class="section-loading">⏳ 加载宏观数据...</div>
+    </div>
+    <div class="macro-verdict" id="macroVerdict" style="display:none;">
+      <div class="mv-label">经济环境判断</div>
+      <div class="mv-text"></div>
+    </div>
+  </div>
+
   <!-- ── 中部：K线图 + 预测卡片 ── -->
   <div class="middle-row">
     <!-- K线图表 -->
@@ -1137,6 +1307,21 @@
       <div class="predict-list" id="predictList">
         <div class="predict-empty">加载中...</div>
       </div>
+    </div>
+  </div>
+
+  <!-- ── 自选股管理区 ── -->
+  <div class="glass-card watchlist-section">
+    <div class="section-header">
+      <span class="title">⭐ 自选股管理</span>
+    </div>
+    <div class="watchlist-toolbar">
+      <input class="wl-code" id="wlCodeInput" type="text" placeholder="代码 (如 600519)" maxlength="6" autocomplete="off">
+      <input class="wl-name" id="wlNameInput" type="text" placeholder="名称 (如 贵州茅台)" autocomplete="off">
+      <button class="btn-add" id="wlAddBtn" onclick="addToWatchlist()">➕ 添加</button>
+    </div>
+    <div class="wl-table" id="wlTable">
+      <div class="section-loading">⏳ 加载自选列表...</div>
     </div>
   </div>
 
@@ -1924,6 +2109,146 @@ function renderFutures(items) {
   }).join('');
 }
 
+// ── 宏观环境 ──
+async function loadMacro() {
+  const grid = document.getElementById('macroGrid');
+  const verdictEl = document.getElementById('macroVerdict');
+  try {
+    const resp = await fetch('/api/macro');
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    renderMacro(data);
+  } catch {
+    renderMacro(generateMockMacro());
+  }
+}
+
+function generateMockMacro() {
+  return {
+    parts: [
+      { label: 'CPI', value: '0.3%', sub: '同比 · 温和通胀' },
+      { label: 'PMI', value: '50.2', sub: '制造业 · 扩张区间' },
+      { label: 'M2', value: '10.5%', sub: '同比增速 · 流动性充裕' },
+      { label: 'LPR(1Y)', value: '3.45%', sub: '贷款市场报价利率' },
+    ],
+    verdict: '经济弱复苏格局延续，CPI温和回升、PMI站稳荣枯线上方，M2增速保持双位数显示流动性环境偏宽松。LPR维持低位利好企业融资成本下降，整体宏观环境对权益市场偏友好。',
+  };
+}
+
+function renderMacro(data) {
+  const grid = document.getElementById('macroGrid');
+  const verdictEl = document.getElementById('macroVerdict');
+
+  if (!data || !data.parts || !data.parts.length) {
+    grid.innerHTML = '<div class="section-loading">暂无宏观数据</div>';
+    verdictEl.style.display = 'none';
+    return;
+  }
+
+  grid.innerHTML = data.parts.map(p => `
+    <div class="macro-card">
+      <div class="mc-label">${p.label}</div>
+      <div class="mc-value">${p.value || '--'}</div>
+      <div class="mc-sub">${p.sub || ''}</div>
+    </div>
+  `).join('');
+
+  if (data.verdict) {
+    verdictEl.style.display = 'block';
+    verdictEl.querySelector('.mv-text').textContent = data.verdict;
+  } else {
+    verdictEl.style.display = 'none';
+  }
+}
+
+// ── 自选股管理 ──
+async function loadWatchlist() {
+  const tbl = document.getElementById('wlTable');
+  try {
+    const resp = await fetch('/api/watchlist');
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    renderWatchlist(data);
+  } catch {
+    renderWatchlist(generateMockWatchlist());
+  }
+}
+
+function generateMockWatchlist() {
+  return [
+    { code: '600519', name: '贵州茅台' },
+    { code: '300750', name: '宁德时代' },
+    { code: '002594', name: '比亚迪' },
+    { code: '000858', name: '五粮液' },
+  ];
+}
+
+function renderWatchlist(items) {
+  const tbl = document.getElementById('wlTable');
+  if (!items || !items.length) {
+    tbl.innerHTML = '<div class="section-loading">暂无自选股，在上方添加</div>';
+    return;
+  }
+  tbl.innerHTML = items.map(s => `
+    <div class="wl-row">
+      <span class="wl-code">${s.code}</span>
+      <span class="wl-name">${s.name}</span>
+      <button class="btn-del" onclick="deleteFromWatchlist('${s.code}')">✕ 删除</button>
+    </div>
+  `).join('');
+}
+
+async function addToWatchlist() {
+  const codeInput = document.getElementById('wlCodeInput');
+  const nameInput = document.getElementById('wlNameInput');
+  const btn = document.getElementById('wlAddBtn');
+  const code = codeInput.value.trim();
+  const name = nameInput.value.trim();
+
+  if (!code || !name) {
+    if (!code) codeInput.focus();
+    else nameInput.focus();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ 添加中...';
+
+  try {
+    const resp = await fetch('/api/watchlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, name }),
+    });
+    if (!resp.ok) throw new Error('添加失败');
+    codeInput.value = '';
+    nameInput.value = '';
+    codeInput.focus();
+    await loadWatchlist();
+    // 添加后自动刷新决策卡
+    loadDecisions();
+  } catch (err) {
+    alert('⚠️ 添加自选股失败：' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '➕ 添加';
+  }
+}
+
+async function deleteFromWatchlist(code) {
+  if (!confirm(`确认删除自选股 ${code}？`)) return;
+
+  try {
+    const resp = await fetch(`/api/watchlist?code=${code}`, { method: 'DELETE' });
+    if (!resp.ok) throw new Error('删除失败');
+    await loadWatchlist();
+    // 删除后自动刷新决策卡
+    loadDecisions();
+  } catch (err) {
+    alert('⚠️ 删除失败：' + err.message);
+  }
+}
+
 // ═══════════════════════════════════════════
 // 聊天框 JS（保留，不修改）
 // ═══════════════════════════════════════════
@@ -2078,6 +2403,8 @@ render();
   initChart();
   loadIndexOverview();
   loadOneLine();
+  loadMacro();
+  loadWatchlist();
   loadKline(currentStock, currentPeriod);
   loadDecisions();
   loadValuation();
