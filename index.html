@@ -2385,13 +2385,24 @@
 
 <script>
 // ═══════════════════════════════════════════
+// 工具函数
+// ═══════════════════════════════════════════
+
+// ── 带超时的 fetch 封装（AbortController）──
+function fetchWithTimeout(url, timeoutMs = 15000, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+// ═══════════════════════════════════════════
 // 看板模块 JS
 // ═══════════════════════════════════════════
 
 // ── 指数概览 ──
 async function loadIndexOverview() {
   try {
-    const resp = await fetch('/api/index');
+    const resp = await fetchWithTimeout('/api/index');
     if (!resp.ok) throw new Error('API 未就绪');
     const data = await resp.json();
     updateIndexItem('SH', data.sh);
@@ -2441,7 +2452,7 @@ async function loadKline(code, period) {
   klineChart.showLoading({ text: '加载K线数据...', color: '#8b5cf6', maskColor: 'rgba(13,17,23,0.75)' });
 
   try {
-    const resp = await fetch(`/api/kline?code=${code}&period=${period}`);
+    const resp = await fetchWithTimeout(`/api/kline?code=${code}&period=${period}`);
     if (!resp.ok) throw new Error('API 错误');
     const data = await resp.json();
     renderKline(data);
@@ -2828,7 +2839,7 @@ document.getElementById('customCodeInput')?.addEventListener('keydown', function
 async function loadBoards() {
   const container = document.getElementById('boardList');
   try {
-    const resp = await fetch('/api/boards');
+    const resp = await fetchWithTimeout('/api/boards');
     if (!resp.ok) throw new Error('API 错误');
     const boards = await resp.json();
     renderBoards(boards);
@@ -2871,7 +2882,7 @@ function renderBoards(boards) {
 async function loadPredictions() {
   const container = document.getElementById('predictList');
   try {
-    const resp = await fetch('/api/predictions');
+    const resp = await fetchWithTimeout('/api/predictions');
     if (!resp.ok) throw new Error('API 错误');
     const preds = await resp.json();
     renderPredictions(preds);
@@ -2999,7 +3010,7 @@ function generateMockRisk() {
 async function loadTrend() {
   const container = document.getElementById('trendContent');
   try {
-    const resp = await fetch('/api/trend');
+    const resp = await fetchWithTimeout('/api/trend');
     if (!resp.ok) throw new Error('API 错误');
     const data = await resp.json();
     renderTrend(data);
@@ -3090,7 +3101,7 @@ function renderTrend(data) {
 async function loadOneLine() {
   const el = document.getElementById('onelineBanner');
   try {
-    const resp = await fetch('/api/oneline');
+    const resp = await fetchWithTimeout('/api/oneline');
     if (!resp.ok) throw new Error('API 错误');
     const data = await resp.json();
     el.innerHTML = `<span class="ol-icon">📡</span><span class="ol-text">${data.line || '市场数据加载中...'}</span>`;
@@ -3102,13 +3113,14 @@ async function loadOneLine() {
 // ── 决策卡 ──
 async function loadDecisions() {
   const grid = document.getElementById('decisionGrid');
+  grid.innerHTML = '<div class="section-loading">🎯 决策计算中...</div>';
   try {
-    const resp = await fetch('/api/decision');
+    const resp = await fetchWithTimeout('/api/decision', 10000);
     if (!resp.ok) throw new Error('API 错误');
     const data = await resp.json();
     renderDecisions(data);
   } catch {
-    renderDecisions(generateMockDecision());
+    grid.innerHTML = '<div class="section-loading" style="color: var(--danger);">⚠️ 决策卡加载失败<br/><small style="font-size:11px;color:var(--text-secondary);">请刷新页面重试</small></div>';
   }
 }
 
@@ -3136,7 +3148,7 @@ function renderDecisions(items) {
 async function loadValuation() {
   const tbl = document.getElementById('valuationTable');
   try {
-    const resp = await fetch('/api/valuation');
+    const resp = await fetchWithTimeout('/api/valuation');
     if (!resp.ok) throw new Error('API 错误');
     const data = await resp.json();
     renderValuation(data);
@@ -3167,7 +3179,7 @@ function renderValuation(items) {
 async function loadChips() {
   const grid = document.getElementById('chipsGrid');
   try {
-    const resp = await fetch('/api/chips');
+    const resp = await fetchWithTimeout('/api/chips');
     if (!resp.ok) throw new Error('API 错误');
     const data = await resp.json();
     renderChips(data);
@@ -3201,7 +3213,7 @@ let currentCurveIdx = 0;
 
 async function loadCurve() {
   try {
-    const resp = await fetch('/api/curve');
+    const resp = await fetchWithTimeout('/api/curve');
     if (!resp.ok) throw new Error('API 错误');
     curveDataAll = await resp.json();
     renderCurveStock();
@@ -3376,7 +3388,7 @@ async function loadPortfolio() {
   const statsEl = document.getElementById("portfolioStats");
   const namesEl = document.getElementById("portfolioNames");
   try {
-    const resp = await fetch("/api/portfolio");
+    const resp = await fetchWithTimeout("/api/portfolio");
     if (!resp.ok) throw new Error("API 错误");
     const data = await resp.json();
     renderPortfolio(data);
@@ -3421,7 +3433,7 @@ function renderPortfolio(data) {
 async function loadRisk() {
   const listEl = document.getElementById("riskList");
   try {
-    const resp = await fetch("/api/risk");
+    const resp = await fetchWithTimeout("/api/risk");
     if (!resp.ok) throw new Error("API 错误");
     const data = await resp.json();
     renderRisk(data);
@@ -3449,7 +3461,7 @@ function renderRisk(data) {
 	  const tbody = document.getElementById("backtestBody");
 	  const noteEl = document.getElementById("backtestNote");
 	  try {
-	    const resp = await fetch("/api/backtest");
+	    const resp = await fetchWithTimeout("/api/backtest");
 	    if (!resp.ok) throw new Error("API 错误");
 	    const data = await resp.json();
 	    renderBacktest(data);
@@ -3508,7 +3520,7 @@ function renderRisk(data) {
 	async function loadPaper() {
 	  const grid = document.getElementById("paperGrid");
 	  try {
-	    const resp = await fetch("/api/paper");
+	    const resp = await fetchWithTimeout("/api/paper");
 	    if (!resp.ok) throw new Error("API 错误");
 	    paperData = await resp.json();
 	    renderPaperCards();
@@ -3791,7 +3803,7 @@ function renderRisk(data) {
 async function loadVerify() {
   const el = document.getElementById('verifyContent');
   try {
-    const resp = await fetch('/api/verify');
+    const resp = await fetchWithTimeout('/api/verify');
     if (!resp.ok) throw new Error('API 错误');
     const data = await resp.json();
     renderVerify(data);
@@ -3901,7 +3913,7 @@ let accuracyTrendChart = null;
 
 async function loadPredictHistory() {
   try {
-    const resp = await fetch('/api/predict_history');
+    const resp = await fetchWithTimeout('/api/predict_history');
     if (!resp.ok) throw new Error('API 错误');
     const data = await resp.json();
     renderPredictHistory(data);
@@ -4177,7 +4189,7 @@ window.addEventListener('resize', function() {
 async function loadFutures() {
   const grid = document.getElementById('futuresGrid');
   try {
-    const resp = await fetch('/api/futures');
+    const resp = await fetchWithTimeout('/api/futures');
     if (!resp.ok) throw new Error('API 错误');
     const data = await resp.json();
     renderFutures(data);
@@ -4212,7 +4224,7 @@ async function loadMacro() {
   const grid = document.getElementById('macroGrid');
   const verdictEl = document.getElementById('macroVerdict');
   try {
-    const resp = await fetch('/api/macro');
+    const resp = await fetchWithTimeout('/api/macro');
     if (!resp.ok) throw new Error('API 错误');
     const data = await resp.json();
     renderMacro(data);
@@ -4268,7 +4280,7 @@ async function loadMacroChart() {
 
   let chartData;
   try {
-    const resp = await fetch('/api/macro_chart');
+    const resp = await fetchWithTimeout('/api/macro_chart');
     if (!resp.ok) throw new Error('API 错误');
     chartData = await resp.json();
   } catch {
@@ -4442,7 +4454,7 @@ function generateMockMacroChart() {
 async function loadWatchlist() {
   const tbl = document.getElementById('wlTable');
   try {
-    const resp = await fetch('/api/watchlist');
+    const resp = await fetchWithTimeout('/api/watchlist');
     if (!resp.ok) throw new Error('API 错误');
     const data = await resp.json();
     renderWatchlist(data);
@@ -4492,7 +4504,7 @@ async function addToWatchlist() {
   btn.textContent = '⏳ 添加中...';
 
   try {
-    const resp = await fetch('/api/watchlist', {
+    const resp = await fetchWithTimeout('/api/watchlist', 15000, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code, name }),
@@ -4516,7 +4528,7 @@ async function deleteFromWatchlist(code) {
   if (!confirm(`确认删除自选股 ${code}？`)) return;
 
   try {
-    const resp = await fetch(`/api/watchlist?code=${code}`, { method: 'DELETE' });
+    const resp = await fetchWithTimeout(`/api/watchlist?code=${code}`, 15000, { method: 'DELETE' });
     if (!resp.ok) throw new Error('删除失败');
     await loadWatchlist();
     // 删除后自动刷新决策卡
@@ -4674,17 +4686,24 @@ document.addEventListener('keydown', (e) => {
 render();
 
 // ═══════════════════════════════════════════
-// 看板初始化
+// 看板初始化 —— 异步分批加载
+// 策略：所有区块同时触发 fetch，互不阻塞；
+//       每个 fetch 自带 AbortController 15s 超时；
+//       决策卡 10s 超时独立处理；
+//       快的区块先渲染，慢的显示 loading spinner
 // ═══════════════════════════════════════════
 (function initDashboard() {
+  // K线图表容器初始化（同步）
   initChart();
+
+  // ── 以下全部异步并行，各自 try-catch 隔离 ──
   loadIndexOverview();
   loadOneLine();
   loadMacro();
   loadMacroChart();
   loadWatchlist();
   loadKline(currentStock, currentPeriod);
-  loadDecisions();
+  loadDecisions();     // 10s 超时，独立错误提示
   loadValuation();
   loadChips();
   loadBoards();

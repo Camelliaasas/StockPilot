@@ -34,6 +34,75 @@ def get_spot(code):
         pass
     return None
 
+def fast_decision(code, name, news=None):
+    """快速决策（看板用——DB 秒查——不调外部接口——0.5 秒/只）"""
+    symbol = ('sh' if code.startswith('6') else 'sz') + code
+    tech = '观望'
+    tech_score = 0
+    bias = 0.0
+    try:
+        import joblib as _jb
+        import numpy as _np
+        import pandas as _pd
+        m = _jb.load('C:/Users/23643/src_workflow/stock_predict/model_stock_binary.joblib')
+        # 从本地 DB 读（秒级——不调腾讯）
+        from db import get_conn as _gc
+        _conn = _gc()
+        rows = _conn.execute("SELECT date, open, high, low, close, volume FROM daily_prices WHERE code=? ORDER BY date DESC LIMIT 70", (int(code),)).fetchall()
+        _conn.close()
+        if rows and len(rows) > 30:
+            df = _pd.DataFrame([dict(r) for r in rows][::-1])
+            c = df['close']
+            last_close = float(c.iloc[-1])
+            feats_row = [float(c.pct_change().iloc[-1]),
+                         float(c.rolling(5).mean().iloc[-1]) / last_close - 1,
+                         float(c.rolling(20).mean().iloc[-1]) / last_close - 1,
+                         float(c.rolling(60).mean().iloc[-1]) / last_close - 1,
+                         0.0, 0.0, 50.0, 1.0, 0.01, 0, 0, 0, 0.0, 0.0, 0, 0.0, 1.0, 1.0,
+                         0.0, 50.0, 50.0, 0, 0.0, 25.0, 0, 50.0, 0.0, 0.0, 0, 0, 0]
+            x = _np.nan_to_num(_np.array([feats_row[:m.n_features_in_]]), nan=0.0)
+            proba = m.predict_proba(x)[0]
+            up = float(proba[list(m.classes_).index(1)]) if 1 in m.classes_ else 0.5
+            if up >= 0.58:
+                tech, tech_score = '买入', 2
+            elif up >= 0.52:
+                tech, tech_score = '持有', 1
+            elif up <= 0.42:
+                tech, tech_score = '卖出', -2
+            elif up <= 0.48:
+                tech, tech_score = '减持', -1
+    except Exception:
+        pass
+    # 基本面（DB 财务）
+    fund = '中'
+    fund_score = 0
+    try:
+        from db import get_conn
+        conn = get_conn()
+        row = conn.execute("SELECT roe, revenue_yoy FROM financials WHERE code=? ORDER BY report_date DESC LIMIT 1", (int(code),)).fetchone()
+        conn.close()
+        if row:
+            roe, rev = row['roe'], row['revenue_yoy']
+            if roe > 15 and rev > 10:
+                fund, fund_score = '强', 2
+            elif roe > 8:
+                fund, fund_score = '中', 0
+            else:
+                fund, fund_score = '弱', -1
+    except Exception:
+        pass
+    score = tech_score + fund_score
+    if score >= 3:
+        act, pos = '买入', '30%'
+    elif score >= 1:
+        act, pos = '持有', '20%'
+    elif score <= -2:
+        act, pos = '卖出', '0%'
+    else:
+        act, pos = '观望', '10%'
+    return {'code': code, 'name': name, 'tech': tech, 'fund': fund, 'news': '—',
+            'score': score, 'action': act, 'position': pos, 'bias': bias, 'inst': '', 'val': '', 'chip': ''}
+
 def decision(code, name, news):
     """单只决策：技术信号 + 基本面 + 新闻 → 明确决策 + 仓位"""
     symbol = ('sh' if code.startswith('6') else 'sz') + code

@@ -315,20 +315,34 @@ def api_oneline():
 
 @app.route('/api/decision')
 def api_decision():
-    """决策卡（8 只核心——简化版——快速）"""
-    from decision_card import decision, WATCHLIST
-    import akshare as ak
-    try:
-        news = [f'{r["标题"]}' for _, r in ak.stock_info_global_em().head(5).iterrows()]
-    except Exception:
-        news = []
+    """决策卡（自选——快速版——ML+DB 秒查——缓存 5 分钟）"""
+    import time as _t
+    now = _t.time()
+    if hasattr(api_decision, 'c_ts') and now - api_decision.c_ts < 300:
+        return jsonify(api_decision.c_data)
+    from decision_card import get_watchlist, fast_decision
+    from db import get_conn
+    watch = get_watchlist()[:6]
+    conn = get_conn()
     out = []
-    for code, name in WATCHLIST[:5]:
+    for code, name in watch:
         try:
-            d = decision(code, name, news)
-            out.append({'name': d['name'], 'price': '—', 'action': d['action'], 'position': d['position']})
+            d = fast_decision(code, name)
+            # DB 最新价（秒级——不调实时接口）
+            row = conn.execute("SELECT date, close FROM daily_prices WHERE code=? ORDER BY date DESC LIMIT 1", (int(code),)).fetchone()
+            price = f"{row['close']:.2f}" if row else '—'
+            chg = 0.0
+            if row:
+                prev = conn.execute("SELECT close FROM daily_prices WHERE code=? AND date < ? ORDER BY date DESC LIMIT 1", (int(code), str(row['date']))).fetchone()
+                if prev and prev['close']:
+                    chg = round((float(row['close']) / float(prev['close']) - 1) * 100, 1)
+            out.append({'name': d['name'], 'code': d['code'], 'price': price,
+                        'chg': chg, 'action': d['action'], 'position': d['position']})
         except Exception:
             pass
+    conn.close()
+    api_decision.c_data = out
+    api_decision.c_ts = now
     return jsonify(out)
 
 @app.route('/api/futures')
@@ -347,4 +361,4 @@ def api_futures():
     return jsonify(out)
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5521, debug=False)
+    app.run(host='127.0.0.1', port=5521, debug=False, threaded=True)
