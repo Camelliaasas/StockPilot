@@ -336,6 +336,22 @@ def chat(message):
             lines.append(f"· {t['name']} {t['change']:+.1f}%")
         lines.append('\n⚠️ 仅供参考')
         return '\n'.join(lines)
+    # 连锁推演意图（"连锁/推演/影响"）
+    if '连锁' in message or '推演' in message or '连锁反应' in message:
+        from event_chain import analyze_chain
+        r = analyze_chain()
+        if 'error' in r:
+            return f'推演失败: {r["error"]}'
+        lines = ['🔗 事件连锁推演（多事件→传导→股市影响）:']
+        for ev in r['events']:
+            icon = '🔴' if ev['score'] > 0 else ('🟢' if ev['score'] < 0 else '⚪')
+            lines.append(f"\n{icon} [{ev['level']}] {ev['event']}")
+            for step in ev['chain']:
+                lines.append(f"  {step}")
+        lines.append(f"\n综合评分: {r['total_score']:+d}")
+        lines.append(f"🎯 {r['verdict']}")
+        lines.append('\n⚠️ 传导链为逻辑推演——仅供参考')
+        return '\n'.join(lines)
     # 政策意图（"政策/新闻"）
     if '政策' in message or '新闻' in message:
         from policy_tracker import scan_policy
