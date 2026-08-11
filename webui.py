@@ -345,7 +345,7 @@ def api_portfolio():
     conn = get_conn()
     poses = conn.execute('SELECT * FROM positions').fetchall()
     conn.close()
-    if poses:
+    if poses and len(poses) >= 2:
         watch = [(r['code'], r['name']) for r in poses[:5]]
     else:
         from decision_card import get_watchlist
