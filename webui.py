@@ -337,12 +337,19 @@ def api_backtest():
 
 @app.route('/api/portfolio')
 def api_portfolio():
-    """组合分析（自选 5 只等权）"""
+    """组合分析（真实持仓——收益/风险/相关性——无持仓用自选）"""
     import akshare as ak
     import pandas as pd
     import numpy as np
-    from decision_card import get_watchlist
-    watch = get_watchlist()[:5]
+    from db import get_conn
+    conn = get_conn()
+    poses = conn.execute('SELECT * FROM positions').fetchall()
+    conn.close()
+    if poses:
+        watch = [(r['code'], r['name']) for r in poses[:5]]
+    else:
+        from decision_card import get_watchlist
+        watch = get_watchlist()[:5]
     rets = {}
     for code, name in watch:
         try:
@@ -362,9 +369,11 @@ def api_portfolio():
     corr = df.corr()
     n = len(corr)
     avg_corr = (corr.values.sum() - n) / (n * (n - 1)) if n > 1 else 0
+    # 集中度（最大单票权重）
+    max_w = 1 / n
     return jsonify({'annual_ret': round(annual * 100, 1), 'vol': round(vol * 100, 1),
                     'sharpe': round(sharpe, 2), 'avg_corr': round(avg_corr, 2),
-                    'names': list(rets.keys())})
+                    'max_weight': round(max_w * 100, 0), 'names': list(rets.keys())})
 
 @app.route('/api/risk')
 def api_risk():
