@@ -107,6 +107,54 @@ def api_kline():
     except Exception as e:
         return jsonify({'error': str(e)[:100]}), 500
 
+@app.route('/api/positions', methods=['GET', 'POST', 'DELETE'])
+def api_positions():
+    """持仓管理：GET 持仓+盈亏 / POST 添加 / DELETE 删除"""
+    from db import get_conn as _gc
+    conn = _gc()
+    if request.method == 'GET':
+        rows = conn.execute('SELECT * FROM positions ORDER BY added_at').fetchall()
+        conn.close()
+        out = []
+        for r in rows:
+            try:
+                conn2 = _gc()
+                p = conn2.execute("SELECT close FROM daily_prices WHERE code=? ORDER BY date DESC LIMIT 1", (int(r['code']),)).fetchone()
+                conn2.close()
+                cur = float(p['close']) if p else 0
+                cost_val = r['cost'] * r['shares']
+                cur_val = cur * r['shares']
+                out.append({'code': r['code'], 'name': r['name'], 'shares': r['shares'], 'cost': r['cost'],
+                            'cur': round(cur, 2), 'market_value': round(cur_val, 0),
+                            'pnl': round(cur_val - cost_val, 0),
+                            'pnl_pct': round((cur / r['cost'] - 1) * 100, 1) if r['cost'] else 0})
+            except Exception:
+                pass
+        return jsonify(out)
+    if request.method == 'POST':
+        d = request.get_json(silent=True) or {}
+        code = str(d.get('code', '')).strip()
+        shares = float(d.get('shares', 0))
+        cost = float(d.get('cost', 0))
+        if not code or shares <= 0:
+            conn.close()
+            return jsonify({'error': '需要 code/shares'}), 400
+        name = str(d.get('name', '')).strip() or code
+        conn.execute('INSERT OR REPLACE INTO positions (code, name, shares, cost) VALUES (?,?,?,?)',
+                     (code, name, shares, cost))
+        conn.commit()
+        conn.close()
+        return jsonify({'ok': True})
+    d = request.get_json(silent=True) or {}
+    code = str(d.get('code', '')).strip()
+    if not code:
+        conn.close()
+        return jsonify({'error': '缺少代码'}), 400
+    conn.execute('DELETE FROM positions WHERE code=?', (code,))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
+
 @app.route('/api/market')
 def api_market():
     """市场涨跌榜（总览+涨幅/跌幅/成交额）——缓存 2 分钟"""

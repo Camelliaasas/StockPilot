@@ -2400,6 +2400,141 @@
     border-color: var(--danger);
   }
 
+  /* ── 我的持仓区 ── */
+  .positions-section { padding: 16px 18px; }
+  .positions-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 600px) {
+    .positions-summary { grid-template-columns: 1fr; }
+  }
+  .pos-summary-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    text-align: center;
+    transition: all 0.25s ease;
+  }
+  .pos-summary-card:hover {
+    border-color: rgba(110,64,201,0.4);
+    box-shadow: 0 4px 20px rgba(110,64,201,0.1);
+    transform: translateY(-1px);
+  }
+  .pos-summary-card .psm-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .pos-summary-card .psm-value {
+    font-size: 22px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono','Cascadia Code','JetBrains Mono',monospace;
+    color: var(--text);
+  }
+  .pos-summary-card .psm-value.profit { color: #f43f5e; }
+  .pos-summary-card .psm-value.loss   { color: #10b981; }
+
+  .positions-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .pos-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 8px 16px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+  }
+  .pos-input:focus { border-color: var(--accent); }
+  .pos-input::placeholder { color: #484f58; }
+  .pos-input.code   { width: 110px; }
+  .pos-input.shares { width: 90px; }
+  .pos-input.cost   { width: 100px; }
+
+  .positions-table-wrap {
+    overflow-x: auto;
+  }
+  .positions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .positions-table thead th {
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .positions-table thead th:last-child,
+  .positions-table thead th:nth-last-child(2),
+  .positions-table thead th:nth-last-child(3) {
+    text-align: right;
+  }
+  .positions-table tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(48,54,61,0.4);
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .positions-table tbody td:last-child,
+  .positions-table tbody td:nth-last-child(2),
+  .positions-table tbody td:nth-last-child(3) {
+    text-align: right;
+  }
+  .positions-table tbody tr {
+    transition: background 0.2s;
+  }
+  .positions-table tbody tr:hover {
+    background: rgba(110,64,201,0.06);
+  }
+  .pos-code {
+    font-weight: 700;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+    color: var(--accent-blue);
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .pos-code:hover { color: #60a5fa; }
+  .pos-pnl-profit {
+    color: #f43f5e;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+  }
+  .pos-pnl-loss {
+    color: #10b981;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+  }
+  .pos-empty {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+    padding: 40px 20px;
+    line-height: 1.6;
+  }
+
   /* ── 骨架加载动画 ── */
   .skeleton {
     background: linear-gradient(90deg, var(--surface-hover) 25%, var(--border) 50%, var(--surface-hover) 75%);
@@ -2635,6 +2770,31 @@
       <span class="curve-desc">MA(5,10) 趋势策略回测——滑点0.1%+手续费万2.5</span>
     </div>
     <div class="curve-chart-container" id="curveChart"></div>
+  </div>
+
+  <!-- ── 我的持仓区 ── -->
+  <div class="glass-card positions-section">
+    <div class="section-header">
+      <span class="title">📦 我的持仓</span>
+    </div>
+    <!-- 汇总卡片 -->
+    <div class="positions-summary" id="positionsSummary">
+      <div class="section-loading">⏳ 加载持仓数据...</div>
+    </div>
+    <!-- 添加表单 -->
+    <div class="positions-form">
+      <input class="pos-input code" id="posCodeInput" type="text" placeholder="代码 (如 600519)" maxlength="6" autocomplete="off"
+             onkeydown="if(event.key==='Enter')addPosition()">
+      <input class="pos-input shares" id="posSharesInput" type="number" placeholder="股数" min="1" step="1" autocomplete="off"
+             onkeydown="if(event.key==='Enter')addPosition()">
+      <input class="pos-input cost" id="posCostInput" type="number" placeholder="成本价" min="0.01" step="0.01" autocomplete="off"
+             onkeydown="if(event.key==='Enter')addPosition()">
+      <button class="btn-add" id="posAddBtn" onclick="addPosition()">➕ 添加持仓</button>
+    </div>
+    <!-- 持仓表格 -->
+    <div class="positions-table-wrap" id="positionsTableWrap">
+      <div class="section-loading">⏳ 加载持仓列表...</div>
+    </div>
   </div>
 
   <!-- ── 组合分析区 ── -->
@@ -5135,6 +5295,144 @@ async function deleteFromWatchlist(code) {
   }
 }
 
+// ── 我的持仓 ──
+async function loadPositions() {
+  try {
+    const resp = await fetchWithTimeout('/api/positions');
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    renderPositions(data);
+  } catch {
+    renderPositions(generateMockPositions());
+  }
+}
+
+function generateMockPositions() {
+  return [
+    { code: '600519', name: '贵州茅台', shares: 100, cost: 1680.00, cur: 1725.50, market_value: 172550, pnl: 4550, pnl_pct: 2.7 },
+    { code: '300750', name: '宁德时代', shares: 500, cost: 205.00, cur: 198.30, market_value: 99150, pnl: -3350, pnl_pct: -3.3 },
+    { code: '000858', name: '五粮液',   shares: 300, cost: 150.00, cur: 146.80, market_value: 44040, pnl: -960,  pnl_pct: -2.1 },
+  ];
+}
+
+function renderPositions(data) {
+  const summaryEl = document.getElementById('positionsSummary');
+  const tableWrap = document.getElementById('positionsTableWrap');
+
+  if (!data || !data.length) {
+    summaryEl.innerHTML = '<div class="pos-empty">📦 暂无持仓——添加您的持仓开始跟踪</div>';
+    tableWrap.innerHTML = '';
+    return;
+  }
+
+  // 汇总计算
+  const totalValue = data.reduce((s, p) => s + (p.market_value || 0), 0);
+  const totalPnl   = data.reduce((s, p) => s + (p.pnl || 0), 0);
+  const totalCost  = data.reduce((s, p) => s + (p.cost || 0) * (p.shares || 0), 0);
+  const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost * 100) : 0;
+
+  const pnlCls  = totalPnl >= 0 ? 'profit' : 'loss';
+  const pnlSign = totalPnl >= 0 ? '+' : '';
+
+  summaryEl.innerHTML = [
+    { label: '总市值',  value: '¥' + totalValue.toLocaleString(),                cls: '' },
+    { label: '总盈亏',  value: pnlSign + '¥' + Math.abs(totalPnl).toLocaleString(), cls: pnlCls },
+    { label: '总盈亏%', value: pnlSign + totalPnlPct.toFixed(2) + '%',           cls: pnlCls },
+  ].map(c =>
+    `<div class="pos-summary-card">
+      <div class="psm-label">${c.label}</div>
+      <div class="psm-value ${c.cls}">${c.value}</div>
+    </div>`
+  ).join('');
+
+  // 表格
+  tableWrap.innerHTML = `
+    <table class="positions-table">
+      <thead>
+        <tr>
+          <th>代码</th><th>名称</th><th>股数</th><th>成本价</th><th>现价</th><th>市值</th><th>盈亏(¥)</th><th>盈亏(%)</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(p => {
+          const pCls  = (p.pnl || 0) >= 0 ? 'pos-pnl-profit' : 'pos-pnl-loss';
+          const pSign = (p.pnl || 0) >= 0 ? '+' : '';
+          const sn = (p.name || '').replace(/'/g, "\\'");
+          const sc = (p.code || '').replace(/'/g, "\\'");
+          return `<tr>
+            <td><span class="pos-code" onclick="openStockDetail('${sn}','${sc}')" title="点击查看详情">${p.code}</span></td>
+            <td>${p.name || '--'}</td>
+            <td>${(p.shares || 0).toLocaleString()}</td>
+            <td>¥${(p.cost || 0).toFixed(2)}</td>
+            <td>¥${(p.cur || 0).toFixed(2)}</td>
+            <td>¥${(p.market_value || 0).toLocaleString()}</td>
+            <td class="${pCls}">${pSign}¥${Math.abs(p.pnl || 0).toLocaleString()}</td>
+            <td class="${pCls}">${pSign}${(p.pnl_pct || 0).toFixed(2)}%</td>
+            <td><button class="btn-del" onclick="event.stopPropagation();deletePosition('${p.code}')">✕ 删除</button></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+async function addPosition() {
+  const codeInput   = document.getElementById('posCodeInput');
+  const sharesInput = document.getElementById('posSharesInput');
+  const costInput   = document.getElementById('posCostInput');
+  const btn         = document.getElementById('posAddBtn');
+
+  const code   = codeInput.value.trim();
+  const shares = parseFloat(sharesInput.value);
+  const cost   = parseFloat(costInput.value);
+
+  if (!code || !shares || shares <= 0) {
+    if (!code) codeInput.focus();
+    else if (!shares || shares <= 0) sharesInput.focus();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ 添加中...';
+
+  try {
+    const resp = await fetchWithTimeout('/api/positions', 15000, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, shares, cost: cost || 0 }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.error || '添加失败');
+    }
+    codeInput.value = '';
+    sharesInput.value = '';
+    costInput.value = '';
+    codeInput.focus();
+    await loadPositions();
+  } catch (err) {
+    alert('⚠️ 添加持仓失败：' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '➕ 添加持仓';
+  }
+}
+
+async function deletePosition(code) {
+  if (!confirm(`确认删除持仓 ${code}？`)) return;
+  try {
+    const resp = await fetchWithTimeout('/api/positions', 15000, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    if (!resp.ok) throw new Error('删除失败');
+    await loadPositions();
+  } catch (err) {
+    alert('⚠️ 删除失败：' + err.message);
+  }
+}
+
 // ═══════════════════════════════════════════
 // 聊天框 JS（保留，不修改）
 // ═══════════════════════════════════════════
@@ -5481,6 +5779,7 @@ function startMarketAutoRefresh() {
   loadPredictions();
   loadTrend();
   loadCurve();
+  loadPositions();
   loadPortfolio();
   loadRisk();
   loadBacktest();

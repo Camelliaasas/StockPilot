@@ -37,6 +37,17 @@ CREATE TABLE IF NOT EXISTS predictions (
     reason TEXT, actual_direction TEXT, correct INTEGER,
     created_at TEXT DEFAULT (datetime('now','localtime'))
 );
+
+CREATE TABLE IF NOT EXISTS watchlist (
+    code TEXT PRIMARY KEY, name TEXT,
+    added_at TEXT DEFAULT (datetime('now','localtime'))
+);
+
+CREATE TABLE IF NOT EXISTS positions (
+    code TEXT PRIMARY KEY, name TEXT,
+    shares REAL, cost REAL,
+    added_at TEXT DEFAULT (datetime('now','localtime'))
+);
 '''
 
 def get_conn():
