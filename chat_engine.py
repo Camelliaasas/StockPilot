@@ -336,6 +336,32 @@ def chat(message):
             lines.append(f"· {t['name']} {t['change']:+.1f}%")
         lines.append('\n⚠️ 仅供参考')
         return '\n'.join(lines)
+    # 选股意图（"选股/筛选"——问财式条件选股）
+    if '选股' in message or '筛选' in message or '哪些股票' in message:
+        from stock_screener import screener
+        import re as _re2
+        roe_min = rev_min = chg_min = None
+        m_roe = _re2.search(r'ROE[>≥](\d+)', message)
+        if m_roe: roe_min = int(m_roe.group(1))
+        m_rev = _re2.search(r'(营收|增长)[>≥](\d+)', message)
+        if m_rev: rev_min = int(m_rev.group(2))
+        m_chg = _re2.search(r'(涨幅|涨)[>≥](\d+)', message)
+        if m_chg: chg_min = int(m_chg.group(2))
+        if '低估值' in message or '低PE' in message:
+            pass  # PE 过滤暂用 ROE 高代理
+        if roe_min is None and rev_min is None and chg_min is None:
+            return '请给条件（如：选股ROE>15 营收>20 / 选股涨幅>3）'
+        r = screener(roe_min=roe_min, rev_min=rev_min, chg_min=chg_min, limit=8)
+        if 'error' in r:
+            return f'选股失败: {r["error"]}'
+        lines = [f'🔍 条件选股（{r["count"]} 只）:']
+        for s in r.get('stocks', []):
+            parts = [f"{s['code']}", f"ROE{s['roe']}%", f"营收{s['rev']:+.0f}%"]
+            if s.get('chg') is not None:
+                parts.append(f"今日{s['chg']:+.1f}%")
+            lines.append(f"· {s['code']}: ROE{s['roe']}% 营收{s['rev']:+.0f}% 现价{s['price']}")
+        lines.append('\n⚠️ 条件筛选为基本面参考——需进一步验证')
+        return '\n'.join(lines)
     # 连锁推演意图（"连锁/推演/影响"）
     if '连锁' in message or '推演' in message or '连锁反应' in message:
         from event_chain import analyze_chain
