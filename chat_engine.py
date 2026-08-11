@@ -336,6 +336,19 @@ def chat(message):
             lines.append(f"· {t['name']} {t['change']:+.1f}%")
         lines.append('\n⚠️ 仅供参考')
         return '\n'.join(lines)
+    # 提醒意图（"提醒/到价"——设置目标价提醒）
+    if '提醒' in message or '到价' in message:
+        from price_alert import add_alert
+        import re as _re3
+        codes = _re3.findall(r'\d{6}', message)
+        prices = _re3.findall(r'(\d+\.?\d*)元', message)
+        if codes and prices:
+            code = codes[0]
+            all_stocks = _load_all_stocks()
+            name = all_stocks.get(code, code)
+            direction = 'down' if '跌破' in message else 'up'
+            return add_alert(code, name, float(prices[0]), direction)
+        return '请给条件（如：提醒 600519 涨到1500元 / 提醒 600519 跌破1400元）'
     # 选股意图（"选股/筛选"——问财式条件选股）
     if '选股' in message or '筛选' in message or '哪些股票' in message:
         from stock_screener import screener
