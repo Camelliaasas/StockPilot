@@ -35,6 +35,8 @@ def api_intraday():
         if df is None or len(df) == 0:
             return jsonify({'error': '无分时数据'}), 404
         df = df.tail(240)  # 当日 4 小时（约 240 分钟）
+        for col in ['open', 'high', 'low', 'close', 'volume']:
+            df[col] = df[col].astype(float)
         prev_close = float(df['close'].iloc[0]) if len(df) > 0 else 0
         # 均价线（累计成交额/累计成交量）
         df['avg'] = (df['close'] * df['volume']).cumsum() / df['volume'].cumsum().replace(0, None)
