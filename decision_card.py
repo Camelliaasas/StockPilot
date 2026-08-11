@@ -44,7 +44,7 @@ def fast_decision(code, name, news=None):
         import joblib as _jb
         import numpy as _np
         import pandas as _pd
-        m = _jb.load('C:/Users/23643/src_workflow/stock_predict/model_stock_binary.joblib')
+        m = _jb.load('C:/Users/23643/src_workflow/stock_predict/model_stock_binary_full.joblib')
         # 从本地 DB 读（秒级——不调腾讯）
         from db import get_conn as _gc
         _conn = _gc()
@@ -113,7 +113,7 @@ def decision(code, name, news):
     try:
         import joblib as _jb
         import numpy as _np
-        m = _jb.load('C:/Users/23643/src_workflow/stock_predict/model_stock_binary.joblib')
+        m = _jb.load('C:/Users/23643/src_workflow/stock_predict/model_stock_binary_full.joblib')
         df = ak.stock_zh_a_daily(symbol=symbol, start_date='20260101', end_date='20260810', adjust='qfq')
         if df is not None and len(df) > 30:
             c = df['close'].reset_index(drop=True)
