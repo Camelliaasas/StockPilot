@@ -327,13 +327,21 @@ def api_portfolio():
 
 @app.route('/api/risk')
 def api_risk():
-    """风险预警（自选）"""
+    """风险预警（真实持仓——组合风险）"""
     import akshare as ak
     import pandas as pd
-    from decision_card import get_watchlist
-    watch = get_watchlist()
+    from db import get_conn
+    conn = get_conn()
+    rows = conn.execute('SELECT * FROM positions').fetchall()
+    conn.close()
     alerts = []
-    for code, name in watch[:6]:
+    # 用持仓——无持仓用自选
+    if rows:
+        items = [(r['code'], r['name']) for r in rows]
+    else:
+        from decision_card import get_watchlist
+        items = get_watchlist()[:6]
+    for code, name in items[:6]:
         try:
             symbol = ('sh' if code.startswith('6') else 'sz') + code
             df = ak.stock_zh_a_daily(symbol=symbol, start_date='20260101', end_date='20260810', adjust='qfq')
