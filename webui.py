@@ -155,6 +155,34 @@ def api_positions():
     conn.close()
     return jsonify({'ok': True})
 
+@app.route('/api/messages')
+def api_messages():
+    """消息中心：最近 cron 推送历史"""
+    import os, glob
+    base = r'C:\Users\23643\AppData\Local\hermes\cron\output'
+    msgs = []
+    if os.path.exists(base):
+        for job_dir in os.listdir(base):
+            job_path = os.path.join(base, job_dir)
+            if not os.path.isdir(job_path):
+                continue
+            files = sorted(glob.glob(os.path.join(job_path, '*.md')), reverse=True)[:2]
+            for f in files:
+                try:
+                    mtime = os.path.getmtime(f)
+                    content = open(f, encoding='utf-8', errors='ignore').read()
+                    # 提取 Response 段
+                    resp = content.split('## Response')[-1].strip()[:200]
+                    if resp and '## Error' not in resp[:50]:
+                        msgs.append({'job': job_dir, 'time': mtime, 'preview': resp[:150]})
+                except Exception:
+                    pass
+    msgs.sort(key=lambda x: -x['time'])
+    from datetime import datetime
+    for m in msgs[:20]:
+        m['time_str'] = datetime.fromtimestamp(m['time']).strftime('%m-%d %H:%M')
+    return jsonify({'messages': msgs[:20]})
+
 @app.route('/api/sector_fund')
 def api_sector_fund():
     """板块资金雷达（资金流入/流出）——缓存 5 分钟"""
