@@ -54,6 +54,33 @@ def main():
             lines.append(f"{icon} {d['name']} {price}{chg} → {d['action']}（仓位{d['position']}）")
         except Exception:
             pass
+    # 持仓盈亏
+    try:
+        from db import get_conn
+        conn = get_conn()
+        poses = conn.execute('SELECT * FROM positions').fetchall()
+        conn.close()
+        if poses:
+            lines.append('')
+            lines.append('**💼 我的持仓**')
+            total_pnl = 0
+            for r in poses[:6]:
+                try:
+                    p = conn2 = get_conn()
+                    pr = p.execute("SELECT close FROM daily_prices WHERE code=? ORDER BY date DESC LIMIT 1", (int(r['code']),)).fetchone()
+                    p.close()
+                    if pr:
+                        cur = float(pr['close'])
+                        pnl = (cur - r['cost']) * r['shares']
+                        total_pnl += pnl
+                        icon = '🔴' if pnl >= 0 else '🟢'
+                        lines.append(f"{icon} {r['name']} ×{r['shares']:.0f} 现价{cur:.2f} 盈亏{pnl:+,.0f}")
+                except Exception:
+                    pass
+            if total_pnl != 0:
+                lines.append(f"· 持仓总盈亏: **{total_pnl:+,.0f}**")
+    except Exception:
+        pass
     # 风险预警
     try:
         from risk_alert import load_hist
