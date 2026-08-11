@@ -81,35 +81,79 @@ def ml_predict_3d():
 
 def main():
     print('=' * 56)
-    print('📊 预测引擎 v4（3日周期 + 高置信门槛——少而准）')
+    print('📊 预测引擎 v5（3日ML + 趋势规则 + 事件连锁推演——三信号融合）')
     print('=' * 56)
+    # 信号1：3日 ML（高置信门槛）
     dir_a, conf_a, reason_a = ml_predict_3d()
-    print(f'\n【3日模型】{dir_a} | 置信 {conf_a:.0f}%')
+    print(f'\n【信号1·3日模型】{dir_a} | 置信 {conf_a:.0f}%')
     print(f'  {reason_a}')
-    # 趋势规则（第二信号）
+    # 市场环境过滤器（多时段验证：趋势市61.3%准/熊市45.9%不准）
+    env_dir = '趋势市'
+    try:
+        idx_env = ak.stock_zh_index_daily(symbol='sh000001').tail(120)
+        c_env = idx_env['close']
+        ma60_env = c_env.rolling(60).mean().iloc[-1]
+        cur_env = c_env.iloc[-1]
+        if cur_env > ma60_env:
+            env_dir = '趋势市'
+        else:
+            env_dir = '熊市/弱势市'
+        print(f'\n【环境过滤】{env_dir}（指数 {">" if cur_env > ma60_env else "<"} MA60——{cur_env:.0f} vs {ma60_env:.0f}）')
+        if env_dir == '熊市/弱势市':
+            print(f'  ⚠️ 多时段验证：熊市准确率 45.9%（不可靠）——预测降级观望')
+            dir_a = '观望'
+    except Exception:
+        pass
+    # 信号2：趋势规则
     idx = ak.stock_zh_index_daily(symbol='sh000001').tail(80)
     c = idx['close']
     ma5, ma20 = c.rolling(5).mean(), c.rolling(20).mean()
-    score = 0
-    if ma5.iloc[-1] > ma20.iloc[-1]: score += 1
-    if c.iloc[-1] / c.iloc[-6] - 1 > 0.01: score += 1
-    elif c.iloc[-1] / c.iloc[-6] - 1 < -0.01: score -= 1
-    dir_c = '看多' if score > 0 else ('看空' if score < 0 else '震荡')
-    print(f'\n【趋势规则】{dir_c}（均线+5日动量——回测验证的策略）')
-    # 综合（模型为主——规则辅助）
-    if dir_a == '观望':
-        final = dir_c if dir_c != '震荡' else '观望'
-        note = '模型低置信——转用趋势规则'
+    score2 = 0
+    if ma5.iloc[-1] > ma20.iloc[-1]: score2 += 1
+    if c.iloc[-1] / c.iloc[-6] - 1 > 0.01: score2 += 1
+    elif c.iloc[-1] / c.iloc[-6] - 1 < -0.01: score2 -= 1
+    dir_c = '看多' if score2 > 0 else ('看空' if score2 < 0 else '震荡')
+    print(f'\n【信号2·趋势规则】{dir_c}（均线+5日动量）')
+    # 信号3：事件连锁推演（新增）
+    chain_score = 0
+    chain_dir = '中性'
+    try:
+        from event_chain import analyze_chain
+        cr = analyze_chain()
+        if 'error' not in cr:
+            chain_score = cr['total_score']
+            if chain_score >= 5: chain_dir = '看多'
+            elif chain_score <= -5: chain_dir = '看空'
+            elif chain_score > 0: chain_dir = '偏多'
+            elif chain_score < 0: chain_dir = '偏空'
+            print(f'\n【信号3·事件连锁】{chain_dir}（综合评分 {chain_score:+d}）')
+            for ev in cr['events'][:3]:
+                print(f'  · {ev["event"]} → {ev["impact"]}')
+    except Exception as e:
+        print(f'\n【信号3·事件连锁】不可用: {str(e)[:40]}')
+    # 三信号融合（加权投票）
+    votes = {}
+    def vote(d, w):
+        votes[d] = votes.get(d, 0) + w
+    if dir_a != '观望':
+        vote(dir_a, 0.4)
     else:
-        final = dir_a
-        note = '模型高置信——直接采用'
-    print(f'\n【综合】{final} | {note}')
+        vote(dir_c if dir_c != '震荡' else '观望', 0.4)
+    vote(dir_c if dir_c != '震荡' else '观望', 0.2)
+    if chain_dir in ('看多', '偏多'):
+        vote('看多', 0.4)
+    elif chain_dir in ('看空', '偏空'):
+        vote('看空', 0.4)
+    final = max(votes, key=votes.get) if votes else '观望'
+    print(f'\n【综合】{final} | 投票: {votes}')
+    print(f'  事件链评分 {chain_score:+d}（{chain_dir}）—— 已纳入决策')
     # 封存
     conn = get_conn()
     today = pd.Timestamp.now().strftime('%Y-%m-%d')
     target = (pd.Timestamp.now() + pd.Timedelta(days=3)).strftime('%Y-%m-%d')
     conn.execute('INSERT INTO predictions (date, code, direction, confidence, reason) VALUES (?,?,?,?,?)',
-                 (today, 'VER-A', final, conf_a / 100, f'预测{target}（3日）上证方向'))
+                 (today, 'VER-A', final, max(votes.values(), default=0.5),
+                  f'三信号融合(ML3日+趋势+事件链{chain_score:+d}) 预测{target}'))
     conn.commit()
     conn.close()
     print(f'\n✅ 已封存（{target} 对照——3 日后验证）')
