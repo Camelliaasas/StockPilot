@@ -155,6 +155,19 @@ def api_positions():
     conn.close()
     return jsonify({'ok': True})
 
+@app.route('/api/sector_fund')
+def api_sector_fund():
+    """板块资金雷达（资金流入/流出）——缓存 5 分钟"""
+    import time as _t
+    now = _t.time()
+    if hasattr(api_sector_fund, 'c_ts') and now - api_sector_fund.c_ts < 300:
+        return jsonify(api_sector_fund.c_data)
+    from sector_fund import sector_fund
+    r = sector_fund()
+    api_sector_fund.c_data = r
+    api_sector_fund.c_ts = now
+    return jsonify(r)
+
 @app.route('/api/market')
 def api_market():
     """市场涨跌榜（总览+涨幅/跌幅/成交额）——缓存 2 分钟"""

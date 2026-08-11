@@ -2556,6 +2556,101 @@
     font-size: 13px;
     padding: 24px;
   }
+
+  /* ── 板块资金雷达 ── */
+  .sector-fund-section { padding: 16px 18px; }
+  .sector-fund-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 800px) {
+    .sector-fund-grid { grid-template-columns: 1fr; }
+  }
+  .sector-fund-col {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .sector-fund-col-header {
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .sector-fund-col-header.inflow { color: #ef4444; border-bottom-color: rgba(239,68,68,0.25); }
+  .sector-fund-col-header.outflow { color: #22c55e; border-bottom-color: rgba(34,197,94,0.25); }
+  .sf-item {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(48,54,61,0.3);
+  }
+  .sf-item:last-child { border-bottom: none; }
+  .sf-item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .sf-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .sf-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sf-chg {
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+  }
+  .sf-chg.up { color: var(--up); }
+  .sf-chg.down { color: var(--down); }
+  .sf-amt {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+  }
+  .sf-bar-wrap {
+    height: 6px;
+    background: rgba(48,54,61,0.5);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .sf-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(0.16,1,0.3,1);
+  }
+  .sf-bar-fill.inflow  { background: linear-gradient(90deg, #ef4444, #f87171); }
+  .sf-bar-fill.outflow { background: linear-gradient(90deg, #22c55e, #4ade80); }
+  .sf-strength {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+  }
+  .sector-fund-note {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: rgba(110,64,201,0.06);
+    border: 1px solid rgba(110,64,201,0.15);
+    border-radius: var(--radius-sm);
+    padding: 8px 14px;
+  }
 </style>
 </head>
 <body>
@@ -2754,6 +2849,27 @@
         <div class="trend-loading">加载中...</div>
       </div>
     </div>
+  </div>
+
+  <!-- ── 板块资金雷达 ── -->
+  <div class="glass-card sector-fund-section" id="sectorFundSection">
+    <div class="section-header">
+      <span class="title">🔭 板块资金雷达</span>
+      <span style="font-size:11px;color:var(--text-secondary);" id="sfUpdateTime"></span>
+    </div>
+    <div class="sector-fund-grid">
+      <!-- 资金流入列 -->
+      <div class="sector-fund-col inflow-col">
+        <div class="sector-fund-col-header inflow">💧 资金流入板块</div>
+        <div id="sectorInflowList"><div class="board-loading">加载中...</div></div>
+      </div>
+      <!-- 资金流出列 -->
+      <div class="sector-fund-col outflow-col">
+        <div class="sector-fund-col-header outflow">💸 资金流出板块</div>
+        <div id="sectorOutflowList"><div class="board-loading">加载中...</div></div>
+      </div>
+    </div>
+    <div class="sector-fund-note">💡 资金强度=成交×涨跌——正=资金进场 / 负=资金出逃</div>
   </div>
 
   <!-- ── 策略净值曲线 ── -->
@@ -3627,6 +3743,86 @@ function renderBoards(boards) {
       </div>
     `;
   }).join('');
+}
+
+// ── 板块资金雷达 ──
+async function loadSectorFund() {
+  try {
+    const resp = await fetchWithTimeout('/api/sector_fund');
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    renderSectorFund(data);
+  } catch (e) {
+    console.warn('板块资金雷达加载失败:', e.message);
+    document.getElementById('sectorInflowList').innerHTML = '<div class="board-loading">数据加载失败</div>';
+    document.getElementById('sectorOutflowList').innerHTML = '<div class="board-loading">数据加载失败</div>';
+  }
+}
+
+function renderSectorFund(data) {
+  const maxStrength = Math.max(
+    ...(data.inflow || []).map(x => Math.abs(x.strength || 0)),
+    ...(data.outflow || []).map(x => Math.abs(x.strength || 0)),
+    1
+  );
+
+  // 流入列
+  const inflowContainer = document.getElementById('sectorInflowList');
+  if (data.inflow && data.inflow.length) {
+    inflowContainer.innerHTML = data.inflow.map((x, i) => {
+      const pct = Math.min(Math.abs(x.strength || 0) / maxStrength * 100, 100);
+      const sign = (x.strength || 0) >= 0 ? '+' : '';
+      return `
+        <div class="sf-item">
+          <div class="sf-item-top">
+            <span class="sf-name">${i + 1}. ${x.name}</span>
+            <div class="sf-meta">
+              <span class="sf-chg up">${x.chg >= 0 ? '+' : ''}${x.chg}%</span>
+              <span class="sf-amt">成交 ${x.amt} 亿</span>
+            </div>
+          </div>
+          <div class="sf-bar-wrap">
+            <div class="sf-bar-fill inflow" style="width:${pct}%"></div>
+          </div>
+          <div class="sf-strength">强度 ${sign}${x.strength} 亿</div>
+        </div>
+      `;
+    }).join('');
+  } else {
+    inflowContainer.innerHTML = '<div class="board-loading">暂无数据</div>';
+  }
+
+  // 流出列
+  const outflowContainer = document.getElementById('sectorOutflowList');
+  if (data.outflow && data.outflow.length) {
+    outflowContainer.innerHTML = data.outflow.map((x, i) => {
+      const pct = Math.min(Math.abs(x.strength || 0) / maxStrength * 100, 100);
+      const sign = (x.strength || 0) >= 0 ? '+' : '';
+      return `
+        <div class="sf-item">
+          <div class="sf-item-top">
+            <span class="sf-name">${i + 1}. ${x.name}</span>
+            <div class="sf-meta">
+              <span class="sf-chg down">${x.chg >= 0 ? '+' : ''}${x.chg}%</span>
+              <span class="sf-amt">成交 ${x.amt} 亿</span>
+            </div>
+          </div>
+          <div class="sf-bar-wrap">
+            <div class="sf-bar-fill outflow" style="width:${pct}%"></div>
+          </div>
+          <div class="sf-strength">强度 ${sign}${x.strength} 亿</div>
+        </div>
+      `;
+    }).join('');
+  } else {
+    outflowContainer.innerHTML = '<div class="board-loading">暂无数据</div>';
+  }
+
+  // 更新时间
+  const now = new Date();
+  document.getElementById('sfUpdateTime').textContent =
+    `更新 ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
 }
 
 // ── 预测卡片 ──
@@ -5776,6 +5972,7 @@ function startMarketAutoRefresh() {
   loadValuation();
   loadChips();
   loadBoards();
+  loadSectorFund();
   loadPredictions();
   loadTrend();
   loadCurve();
