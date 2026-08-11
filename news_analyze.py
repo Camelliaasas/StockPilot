@@ -5,11 +5,52 @@ from db import get_conn
 from sentiment_llm import get_llm_key
 
 def analyze_batch(news_list):
-    """LLM 批量分析新闻：每条 → 影响板块 + 方向 + 强度 + 事件级别"""
-    key = get_llm_key()
-    if not key:
-        return {}
-    news_text = '\n'.join(f'{i+1}. {t}' for i, (t, c) in enumerate(news_list[:15]))
+    """新闻分析：LLM 优先——余额不足自动降级关键词规则"""
+    try:
+        result = _llm_analyze(news_list)
+        if result:
+            return result
+    except Exception:
+        pass
+    return _rule_analyze(news_list)
+
+# 关键词规则（降级用——不依赖 LLM）
+_POS = ['利好', '增长', '突破', '创新', '中标', '回购', '增持', '获批', '超预期', '涨价', '景气', '扩产', '降息', '宽松']
+_NEG = ['利空', '下跌', '亏损', '减持', '违规', '处罚', '调查', '退市', '下滑', '裁员', '收缩', '加息', '风险', '违约']
+_SECTORS = {'半导体': ['芯片', '半导体', '存储', '晶圆'], '人工智能': ['AI', '人工智能', '大模型', '算力', '机器人'],
+            '新能源': ['光伏', '锂电', '电池', '新能源', '储能'], '医药': ['医药', '药', '医疗', '创新药', '疫苗'],
+            '金融': ['银行', '证券', '保险', '央行', '利率', 'LPR'], '地产': ['房地产', '楼市', '房价', '房企'],
+            '消费': ['消费', '白酒', '食品', '零售', '餐饮'], '汽车': ['汽车', '新能源车', '特斯拉'],
+            '石油': ['石油', '原油', '油'], '军工': ['军工', '国防', '航空'], '农业': ['农业', '粮食', '养殖', '猪肉']}
+
+def _rule_analyze(news_list):
+    """关键词规则分析（降级）"""
+    result = {}
+    for i, (t, c) in enumerate(news_list[:15]):
+        text = f'{t} {c or ""}'
+        pos = sum(1 for w in _POS if w in text)
+        neg = sum(1 for w in _NEG if w in text)
+        if pos > neg:
+            direction, strength = '利好', min(5, 1 + pos)
+        elif neg > pos:
+            direction, strength = '利空', min(5, 1 + neg)
+        else:
+            direction, strength = '中性', 2
+        sector = '其他'
+        for s, kws in _SECTORS.items():
+            if any(k in text for k in kws):
+                sector = s
+                break
+        # 级别：央行/政策/国际 = 大；行业/公司 = 中；其余 = 小
+        level = '小'
+        if any(k in text for k in ['央行', '国务院', '政策', '美联储', '关税', '利率', '制裁', '法案']):
+            level = '大'
+        elif any(k in text for k in ['行业', '龙头', '中标', '获批', '减持', '回购', '增持', '调查']):
+            level = '中'
+        result[str(i + 1)] = {'sector': sector, 'direction': direction, 'strength': strength, 'level': level}
+    return result
+
+def _llm_analyze(news_list):
     prompt = f"""你是金融新闻分析员。分析以下新闻，输出每条的影响：
 1. 影响哪些板块/行业（A股板块名）
 2. 利好还是利空（利好/利空/中性）
