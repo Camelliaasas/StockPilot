@@ -103,6 +103,55 @@ def fast_decision(code, name, news=None):
     return {'code': code, 'name': name, 'tech': tech, 'fund': fund, 'news': '—',
             'score': score, 'action': act, 'position': pos, 'bias': bias, 'inst': '', 'val': '', 'chip': ''}
 
+def trend_10d(code):
+    """10 日中期趋势（model_stock_10d——严格外推 53.6%——趋势参考信号）"""
+    import joblib as _jb
+    import numpy as _np
+    import pandas as _pd
+    from db import get_conn as _gc
+    try:
+        m = _jb.load('C:/Users/23643/src_workflow/stock_predict/model_stock_10d.joblib')
+        conn = _gc()
+        df = _pd.read_sql(f"SELECT * FROM daily_prices WHERE code={int(code)} ORDER BY date DESC LIMIT 130", conn)
+        conn.close()
+        if df.empty:
+            return '观望', 0
+        df = df.sort_values('date').reset_index(drop=True)
+        # 全部 30 特征（含 KDJ/CCI/ADX/财务）
+        from ml_patterns import add_features as _af
+        df = _af(df)
+        conn2 = _gc()
+        fin = _pd.read_sql('SELECT * FROM financials ORDER BY report_date', conn2)
+        conn2.close()
+        fin_map = fin.sort_values('report_date').groupby('code').last()
+        fin_lookup = {str(c).zfill(6): r for c, r in fin_map.iterrows()}
+        cs = str(code).zfill(6)
+        roe_v = fin_lookup[cs]['roe'] if cs in fin_lookup else np.nan
+        rev_v = fin_lookup[cs]['revenue_yoy'] if cs in fin_lookup else np.nan
+        roe_v = float(roe_v) if pd.notna(roe_v) else 10.0  # 空给中性 10
+        rev_v = float(rev_v) if pd.notna(rev_v) else 10.0
+        df['roe_cat'] = pd.cut([roe_v], bins=[-999, 8, 15, 999], labels=[0, 1, 2]).astype(float)[0]
+        df['rev_cat'] = pd.cut([rev_v], bins=[-999, 5, 20, 999], labels=[0, 1, 2]).astype(float)[0]
+        row = df.iloc[-1]
+        feats = ['ret', 'ma5', 'ma20', 'ma60', 'macd', 'macd_hist', 'rsi', 'vol_ratio', 'amplitude',
+                 'macd_golden', 'ma520_bull', 'bull_align', 'mom20', 'bias60', 'hh20_break',
+                 'boll_pos', 'kdj_k', 'kdj_j', 'obv_trend', 'cci', 'adx', 'adx_strong',
+                 'wr', 'roc', 'bias20', 'wr_oversold', 'wr_overbought', 'divergence', 'roe_cat', 'rev_cat']
+        vals = []
+        for f in feats:
+            v = row[f] if f in row and _pd.notna(row[f]) else 0.0
+            vals.append(float(v))
+        x = _np.nan_to_num(_np.array([vals]), nan=0.0)
+        proba = m.predict_proba(x)[0]
+        up = float(proba[list(m.classes_).index(1)]) if 1 in m.classes_ else 0.5
+        if up >= 0.65:
+            return '看多', up * 100
+        elif up <= 0.35:
+            return '看空', (1 - up) * 100
+        return '观望', max(up, 1 - up) * 100
+    except Exception:
+        return '观望', 0
+
 def decision(code, name, news):
     """单只决策：技术信号 + 基本面 + 新闻 → 明确决策 + 仓位"""
     symbol = ('sh' if code.startswith('6') else 'sz') + code
