@@ -784,6 +784,202 @@
     .chat-fab { bottom: 16px; right: 16px; }
   }
 
+  /* ═══════════ 个股详情抽屉 CSS ═══════════ */
+  .stock-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .stock-drawer-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .stock-drawer {
+    position: fixed;
+    top: 0; right: 0;
+    width: 440px;
+    max-width: 100vw;
+    height: 100vh;
+    z-index: 201;
+    background: rgba(22,27,34,0.94);
+    backdrop-filter: blur(24px) saturate(1.3);
+    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    border-left: 1px solid var(--border);
+    box-shadow: -10px 0 48px rgba(0,0,0,0.55), -2px 0 24px rgba(110,64,201,0.1);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(105%);
+    transition: transform 0.38s cubic-bezier(0.16,1,0.3,1);
+  }
+  .stock-drawer.open { transform: translateX(0); }
+
+  .sd-header {
+    padding: 22px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(110,64,201,0.14) 0%, rgba(59,130,246,0.07) 100%);
+  }
+  .sd-title {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    min-width: 0;
+  }
+  .sd-name {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.01em;
+  }
+  .sd-code {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-blue);
+    font-family: 'SF Mono','Cascadia Code',monospace;
+    background: rgba(59,130,246,0.12);
+    padding: 3px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(59,130,246,0.25);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .sd-close {
+    background: rgba(248,81,73,0.1);
+    border: 1px solid rgba(248,81,73,0.3);
+    color: var(--danger);
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .sd-close:hover {
+    background: rgba(248,81,73,0.22);
+    border-color: var(--danger);
+    transform: scale(1.05);
+  }
+
+  .sd-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 22px 24px;
+    font-size: 14px;
+    line-height: 1.78;
+    color: var(--text);
+  }
+  .sd-body::-webkit-scrollbar { width: 4px; }
+  .sd-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .sd-body::-webkit-scrollbar-track { background: transparent; }
+
+  .sd-body h1, .sd-body h2, .sd-body h3 {
+    color: var(--text);
+    margin: 18px 0 10px;
+    font-weight: 700;
+  }
+  .sd-body h1 { font-size: 17px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  .sd-body h2 { font-size: 15px; }
+  .sd-body h3 { font-size: 14px; color: var(--accent-glow); }
+  .sd-body p { margin-bottom: 10px; }
+  .sd-body strong { color: var(--accent-glow); font-weight: 700; }
+  .sd-body ul, .sd-body ol { padding-left: 22px; margin-bottom: 10px; }
+  .sd-body li { margin-bottom: 5px; }
+  .sd-body code {
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+    color: var(--accent-glow);
+  }
+
+  .sd-loading {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 80px 20px;
+    font-size: 14px;
+  }
+  .sd-spinner {
+    display: inline-block;
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent-glow);
+    border-radius: 50%;
+    animation: sdSpin 0.8s linear infinite;
+    margin-bottom: 14px;
+  }
+  @keyframes sdSpin { to { transform: rotate(360deg); } }
+
+  .sd-empty {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 100px 20px;
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .sd-empty .sd-empty-icon { font-size: 36px; display: block; margin-bottom: 10px; opacity: 0.5; }
+
+  .sd-footer {
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    background: rgba(13,17,23,0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .sd-quick-btn {
+    flex: 1;
+    padding: 11px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .sd-quick-btn:hover {
+    border-color: var(--accent);
+    background: var(--surface-hover);
+    box-shadow: 0 2px 16px rgba(110,64,201,0.18);
+    transform: translateY(-1px);
+  }
+  .sd-quick-btn:active { transform: scale(0.97); }
+  .sd-quick-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .sd-quick-btn .sd-btn-icon { font-size: 16px; }
+
+  @media (max-width: 520px) {
+    .stock-drawer { width: 100%; max-width: 100%; }
+  }
+
   @media (max-width: 768px) {
     .dashboard { padding: 12px 10px 90px; }
     .top-bar { flex-direction: column; align-items: flex-start; }
@@ -2336,6 +2532,7 @@
           <button class="idx-btn active" data-kperiod="daily" onclick="switchKlinePeriod(this, 'daily')">日K</button>
           <button class="idx-btn" data-kperiod="weekly" onclick="switchKlinePeriod(this, 'weekly')">周K</button>
           <button class="idx-btn" data-kperiod="monthly" onclick="switchKlinePeriod(this, 'monthly')">月K</button>
+          <button class="idx-btn" data-kperiod="intraday" onclick="switchKlinePeriod(this, 'intraday')">分时</button>
         </div>
         <div class="period-btns">
           <button data-period="30" onclick="switchPeriod(this, 30)">1月</button>
@@ -2643,6 +2840,7 @@ let klineChart = null;
 let currentStock = '000001';
 let currentPeriod = 180;
 let currentKtype = 'daily';
+let currentViewMode = 'kline';  // 'kline' | 'intraday'
 
 function initChart() {
   const dom = document.getElementById('klineChart');
@@ -3022,7 +3220,11 @@ function switchIndex(btn, code) {
   customInput.style.display = 'none';
   if (customLabel) customLabel.style.display = 'inline';
   currentStock = code;
-  loadKline(code, currentPeriod, currentKtype);
+  if (currentViewMode === 'intraday') {
+    loadIntraday(code);
+  } else {
+    loadKline(code, currentPeriod, currentKtype);
+  }
 }
 
 function switchCustomStock() {
@@ -3030,19 +3232,193 @@ function switchCustomStock() {
   const code = input.value.trim();
   if (!code || code.length < 6) { input.focus(); return; }
   currentStock = code;
-  loadKline(code, currentPeriod, currentKtype);
+  if (currentViewMode === 'intraday') {
+    loadIntraday(code);
+  } else {
+    loadKline(code, currentPeriod, currentKtype);
+  }
 }
 
 function switchPeriod(btn, days) {
   document.querySelectorAll('.period-btns button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  // 分时模式下点时间周期 → 切回日K
+  if (currentViewMode === 'intraday') {
+    currentViewMode = 'kline';
+    currentKtype = 'daily';
+    document.querySelectorAll('[data-kperiod]').forEach(b => b.classList.remove('active'));
+    const dailyBtn = document.querySelector('[data-kperiod="daily"]');
+    if (dailyBtn) dailyBtn.classList.add('active');
+  }
   loadKline(currentStock, days, currentKtype);
 }
 
 function switchKlinePeriod(btn, ktype) {
   document.querySelectorAll('[data-kperiod]').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  loadKline(currentStock, currentPeriod, ktype);
+  if (ktype === 'intraday') {
+    loadIntraday(currentStock);
+  } else {
+    currentViewMode = 'kline';
+    currentKtype = ktype;
+    loadKline(currentStock, currentPeriod, ktype);
+  }
+}
+
+// ── 分时图 ──
+async function loadIntraday(code) {
+  currentStock = code;
+  currentViewMode = 'intraday';
+  if (!klineChart) initChart();
+  if (!klineChart) return;
+
+  klineChart.showLoading({ text: '加载分时数据...', color: '#8b5cf6', maskColor: 'rgba(13,17,23,0.75)' });
+
+  try {
+    const resp = await fetchWithTimeout(`/api/intraday?code=${code}`);
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    renderIntraday(data);
+  } catch (e) {
+    klineChart.hideLoading();
+    klineChart.setOption({
+      title: { text: '分时数据加载失败: ' + (e.message || '未知错误'), left: 'center', top: 'center', textStyle: { color: '#8b949e', fontSize: 13 } }
+    }, true);
+  }
+}
+
+function renderIntraday(data) {
+  if (!klineChart) return;
+  klineChart.hideLoading();
+
+  const times = data.times || [];
+  const prices = data.prices || [];
+  const avg = data.avg || [];
+  const volume = data.volume || [];
+  const prevClose = data.prev_close;
+
+  const upColor = '#ef4444';
+  const downColor = '#22c55e';
+
+  const option = {
+    backgroundColor: 'transparent',
+    grid: [
+      { left: '8%', right: '2%', top: '5%', height: '48%' },
+      { left: '8%', right: '2%', top: '60%', height: '32%' },
+    ],
+    xAxis: [
+      {
+        type: 'category',
+        data: times,
+        gridIndex: 0,
+        axisLine: { lineStyle: { color: '#30363d' } },
+        axisTick: { show: false },
+        axisLabel: { color: '#8b949e', fontSize: 10, interval: Math.max(Math.floor(times.length / 8), 1) },
+        splitLine: { show: false },
+      },
+      {
+        type: 'category',
+        data: times,
+        gridIndex: 1,
+        axisLine: { lineStyle: { color: '#30363d' } },
+        axisTick: { show: false },
+        axisLabel: { color: '#8b949e', fontSize: 10, interval: Math.max(Math.floor(times.length / 8), 1) },
+        splitLine: { show: false },
+      },
+    ],
+    yAxis: [
+      {
+        type: 'value',
+        gridIndex: 0,
+        scale: true,
+        splitNumber: 5,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: '#8b949e', fontSize: 10 },
+        splitLine: { lineStyle: { color: '#21262d', type: 'dashed' } },
+      },
+      {
+        type: 'value',
+        gridIndex: 1,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: '#8b949e', fontSize: 10 },
+        splitLine: { lineStyle: { color: '#21262d', type: 'dashed' } },
+      },
+    ],
+    dataZoom: [
+      { type: 'inside', xAxisIndex: [0, 1], start: 0, end: 100 },
+    ],
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#161b22',
+      borderColor: '#30363d',
+      textStyle: { color: '#e6edf3', fontSize: 12 },
+      formatter: function(params) {
+        const pp = params.find(p => p.seriesName === '价格');
+        const pa = params.find(p => p.seriesName === '均价');
+        const pv = params.find(p => p.seriesName === '成交量');
+        let html = `<div style="font-weight:600;margin-bottom:4px">${pp ? pp.axisValue : ''}</div>`;
+        if (pp && pp.data != null) html += `价格: ${pp.data}<br/>`;
+        if (pa && pa.data != null) html += `均价: ${pa.data}<br/>`;
+        if (prevClose != null) html += `昨收: ${prevClose}<br/>`;
+        if (pv && pv.data != null) html += `成交量: ${pv.data}手`;
+        return html;
+      },
+    },
+    series: [
+      {
+        name: '价格',
+        type: 'line',
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: prices,
+        smooth: false,
+        symbol: 'none',
+        lineStyle: { color: '#ffffff', width: 1.2 },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(255,255,255,0.06)' },
+            { offset: 1, color: 'rgba(255,255,255,0.0)' },
+          ]),
+        },
+      },
+      {
+        name: '均价',
+        type: 'line',
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: avg,
+        smooth: false,
+        symbol: 'none',
+        lineStyle: { color: '#f0c040', width: 1, type: 'solid' },
+      },
+      {
+        name: '昨收',
+        type: 'line',
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: times.map(() => prevClose),
+        smooth: false,
+        symbol: 'none',
+        lineStyle: { color: '#8b949e', width: 1, type: 'dashed' },
+        silent: true,
+      },
+      {
+        name: '成交量',
+        type: 'bar',
+        xAxisIndex: 1,
+        yAxisIndex: 1,
+        data: volume.map((v, i) => ({
+          value: v,
+          itemStyle: { color: (prevClose != null && prices[i] >= prevClose) ? upColor : downColor },
+        })),
+      },
+    ],
+  };
+
+  klineChart.setOption(option, true);
 }
 
 // 自定义代码输入框回车切换
@@ -3151,19 +3527,20 @@ function renderPredictions(preds) {
 
 function generateMockDecision() {
   const stocks = [
-    { name: '贵州茅台', base: 1680 },
-    { name: '宁德时代', base: 210 },
-    { name: '比亚迪',   base: 280 },
-    { name: '五粮液',   base: 148 },
-    { name: '中国平安', base: 48 },
-    { name: '招商银行', base: 38 },
-    { name: '药明康德', base: 62 },
-    { name: '中芯国际', base: 52 },
+    { name: '贵州茅台', code: '600519', base: 1680 },
+    { name: '宁德时代', code: '300750', base: 210 },
+    { name: '比亚迪',   code: '002594', base: 280 },
+    { name: '五粮液',   code: '000858', base: 148 },
+    { name: '中国平安', code: '601318', base: 48 },
+    { name: '招商银行', code: '600036', base: 38 },
+    { name: '药明康德', code: '603259', base: 62 },
+    { name: '中芯国际', code: '688981', base: 52 },
   ];
   const actions = ['buy','hold','sell','watch'];
   const positions = ['30%','满仓','50%','70%','20%','轻仓','40%','60%'];
   return stocks.map((s, i) => ({
     name: s.name,
+    code: s.code,
     price: (s.base + (Math.random() - 0.5) * s.base * 0.04).toFixed(2),
     action: actions[i % actions.length],
     position: positions[i],
@@ -3348,7 +3725,9 @@ function renderDecisions(items) {
   const actionMap = { buy: ['买入','buy'], hold: ['持有','hold'], sell: ['卖出','sell'], watch: ['观望','watch'] };
   grid.innerHTML = items.map(d => {
     const [label, cls] = actionMap[d.action] || ['观望','watch'];
-    return `<div class="decision-card">
+    const safeName = (d.name || '').replace(/'/g, "\\'");
+    const safeCode = (d.code || '').replace(/'/g, "\\'");
+    return `<div class="decision-card" onclick="openStockDetail('${safeName}', '${safeCode}')" style="cursor:pointer;" title="点击查看详情：${d.name}">
       <div class="dc-name">${d.name}</div>
       <div class="dc-price">¥${Number(d.price).toFixed(2)}</div>
       <div class="dc-meta">
@@ -4693,13 +5072,16 @@ function renderWatchlist(items) {
     tbl.innerHTML = '<div class="section-loading">暂无自选股，在上方添加</div>';
     return;
   }
-  tbl.innerHTML = items.map(s => `
+  tbl.innerHTML = items.map(s => {
+    const safeName = (s.name || '').replace(/'/g, "\\'");
+    const safeCode = (s.code || '').replace(/'/g, "\\'");
+    return `
     <div class="wl-row">
-      <span class="wl-code">${s.code}</span>
-      <span class="wl-name">${s.name}</span>
-      <button class="btn-del" onclick="deleteFromWatchlist('${s.code}')">✕ 删除</button>
+      <span class="wl-code" onclick="openStockDetail('${safeName}','${safeCode}')" style="cursor:pointer;" title="点击查看详情">${s.code}</span>
+      <span class="wl-name" onclick="openStockDetail('${safeName}','${safeCode}')" style="cursor:pointer;" title="点击查看详情">${s.name}</span>
+      <button class="btn-del" onclick="event.stopPropagation();deleteFromWatchlist('${s.code}')">✕ 删除</button>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 async function addToWatchlist() {
@@ -5006,7 +5388,8 @@ function renderMarketCol(containerId, items, type) {
     const chg = item.chg != null ? Number(item.chg) : 0;
     const sign = chg >= 0 ? '+' : '';
     const dir = chg >= 0 ? 'up' : 'down';
-    return `<div class="market-row" onclick="switchToMarketStock('${item.code}')" title="点击切换K线图：${item.name}">
+    const safeName = (item.name || '').replace(/'/g, "\\'");
+    return `<div class="market-row" onclick="switchToMarketStock('${item.code}');openStockDetail('${safeName}','${item.code}')" title="点击查看详情：${item.name}">
       <span class="mr-rank">${i + 1}</span>
       <div class="mr-info">
         <span class="mr-code">${item.code}</span>
@@ -5030,7 +5413,8 @@ function renderMarketAmountCol(containerId, items) {
     const sign = chg >= 0 ? '+' : '';
     const dir = chg >= 0 ? 'up' : 'down';
     const amt = item.amt != null ? Number(item.amt) : 0;
-    return `<div class="market-row" onclick="switchToMarketStock('${item.code}')" title="点击切换K线图：${item.name}">
+    const safeName = (item.name || '').replace(/'/g, "\\'");
+    return `<div class="market-row" onclick="switchToMarketStock('${item.code}');openStockDetail('${safeName}','${item.code}')" title="点击查看详情：${item.name}">
       <span class="mr-rank">${i + 1}</span>
       <div class="mr-info">
         <span class="mr-code">${item.code}</span>
@@ -5058,7 +5442,11 @@ function switchToMarketStock(code) {
     customInput.style.display = 'inline-block';
   }
   if (customLabel) customLabel.style.display = 'none';
-  loadKline(code, currentPeriod, currentKtype);
+  if (currentViewMode === 'intraday') {
+    loadIntraday(code);
+  } else {
+    loadKline(code, currentPeriod, currentKtype);
+  }
 }
 
 function startMarketAutoRefresh() {
@@ -5101,6 +5489,155 @@ function startMarketAutoRefresh() {
   loadPredictHistory();
   loadFutures();
 })();
+
+// ═══════════════════════════════════════════
+// 个股详情抽屉 JS
+// ═══════════════════════════════════════════
+
+let currentDetailStock = { name: '', code: '' };
+
+function openStockDetail(name, code) {
+  if (!name && !code) return;
+
+  currentDetailStock = { name: name || code || '', code: code || '' };
+
+  const displayName = name || code || '';
+
+  // 更新头部
+  document.getElementById('sdStockName').textContent = displayName || '--';
+  const codeEl = document.getElementById('sdStockCode');
+  if (code) {
+    codeEl.textContent = code;
+    codeEl.style.display = 'inline-block';
+  } else {
+    codeEl.style.display = 'none';
+  }
+
+  // 更新快捷按钮名称
+  document.getElementById('sdQuickName1').textContent = displayName;
+  document.getElementById('sdQuickName2').textContent = displayName;
+
+  // 显示加载状态
+  const bodyEl = document.getElementById('sdBody');
+  bodyEl.innerHTML = '<div class="sd-loading"><div class="sd-spinner"></div><div>正在分析 ' + displayName + '...</div></div>';
+
+  // 打开抽屉
+  document.getElementById('stockDrawer').classList.add('open');
+  document.getElementById('stockDrawerOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // 调用聊天 API 获取分析
+  fetchStockAnalysis(displayName, '分析' + displayName);
+}
+
+function closeStockDetail() {
+  document.getElementById('stockDrawer').classList.remove('open');
+  document.getElementById('stockDrawerOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function fetchStockAnalysis(stockName, query) {
+  const bodyEl = document.getElementById('sdBody');
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: query }),
+    });
+
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+    const data = await resp.json();
+    const answer = data.answer || '(无响应)';
+
+    // 简单的 Markdown → HTML
+    let html = answer
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/^\- (.+)$/gm, '<li>$1</li>')
+      .replace(/```([\s\S]*?)```/g, '<code>$1</code>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br/>');
+
+    bodyEl.innerHTML = '<p>' + html + '</p>';
+  } catch (err) {
+    var safeName = stockName.replace(/'/g, "\\'");
+    var safeCode = (currentDetailStock.code || '').replace(/'/g, "\\'");
+    bodyEl.innerHTML =
+      '<div class="sd-loading" style="color:var(--danger);">' +
+      '<div>⚠️ 分析加载失败</div>' +
+      '<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;">' + err.message + '</div>' +
+      '<button onclick="openStockDetail(\'' + safeName + '\',\'' + safeCode + '\')" ' +
+      'style="margin-top:14px;padding:7px 18px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-size:12px;">' +
+      '🔄 重试</button>' +
+      '</div>';
+  }
+}
+
+function sendDrawerQuick(type) {
+  var name = currentDetailStock.name;
+  if (!name) return;
+
+  var query = type === 'checkup' ? '体检' + name : '研报' + name;
+
+  // 更新加载状态
+  document.getElementById('sdBody').innerHTML =
+    '<div class="sd-loading"><div class="sd-spinner"></div><div>正在生成' +
+    (type === 'checkup' ? '体检报告' : '研报分析') + '...</div></div>';
+
+  // 禁用按钮
+  document.getElementById('sdBtnCheckup').disabled = true;
+  document.getElementById('sdBtnReport').disabled = true;
+
+  fetchStockAnalysis(name, query).finally(function() {
+    document.getElementById('sdBtnCheckup').disabled = false;
+    document.getElementById('sdBtnReport').disabled = false;
+  });
+}
+
+// ESC 关闭抽屉（先于聊天框）
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var drawer = document.getElementById('stockDrawer');
+    if (drawer && drawer.classList.contains('open')) {
+      closeStockDetail();
+      e.stopImmediatePropagation();
+    }
+  }
+});
 </script>
+
+<!-- ═══════════ 个股详情抽屉 ═══════════ -->
+<div class="stock-drawer-overlay" id="stockDrawerOverlay" onclick="closeStockDetail()"></div>
+<div class="stock-drawer" id="stockDrawer">
+  <div class="sd-header">
+    <div class="sd-title">
+      <span class="sd-name" id="sdStockName">--</span>
+      <span class="sd-code" id="sdStockCode" style="display:none;">--</span>
+    </div>
+    <button class="sd-close" onclick="closeStockDetail()" title="关闭">✕</button>
+  </div>
+  <div class="sd-body" id="sdBody">
+    <div class="sd-empty">
+      <span class="sd-empty-icon">📋</span>
+      <span>点击任意股票代码或名称<br/>查看 AI 深度分析</span>
+    </div>
+  </div>
+  <div class="sd-footer">
+    <button class="sd-quick-btn" id="sdBtnCheckup" onclick="sendDrawerQuick('checkup')">
+      <span class="sd-btn-icon">🩺</span> 体检<span id="sdQuickName1"></span>
+    </button>
+    <button class="sd-quick-btn" id="sdBtnReport" onclick="sendDrawerQuick('report')">
+      <span class="sd-btn-icon">📄</span> 研报<span id="sdQuickName2"></span>
+    </button>
+  </div>
+</div>
 </body>
 </html>

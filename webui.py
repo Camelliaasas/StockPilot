@@ -23,6 +23,31 @@ def api_chat():
     except Exception as e:
         return jsonify({'error': str(e)[:100]}), 500
 
+@app.route('/api/intraday')
+def api_intraday():
+    """当日分时（新浪——1970 点）"""
+    code = request.args.get('code', '600519')
+    symbol = ('sh' if code.startswith('6') else 'sz') + code
+    try:
+        import akshare as ak
+        import pandas as pd
+        df = ak.stock_zh_a_minute(symbol=symbol, period='1', adjust='')
+        if df is None or len(df) == 0:
+            return jsonify({'error': '无分时数据'}), 404
+        df = df.tail(240)  # 当日 4 小时（约 240 分钟）
+        prev_close = float(df['close'].iloc[0]) if len(df) > 0 else 0
+        # 均价线（累计成交额/累计成交量）
+        df['avg'] = (df['close'] * df['volume']).cumsum() / df['volume'].cumsum().replace(0, None)
+        return jsonify({
+            'times': [str(d)[11:16] for d in df['day']],
+            'prices': [round(float(v), 2) for v in df['close']],
+            'avg': [round(float(v), 2) if pd.notna(v) else None for v in df['avg']],
+            'volume': [float(v) for v in df['volume']],
+            'prev_close': round(prev_close, 2),
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)[:80]}), 500
+
 @app.route('/api/kline')
 def api_kline():
     """K线数据：日/周/月K+MA+BOLL+KDJ+成交量（支持股票/指数）"""
