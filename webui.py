@@ -25,8 +25,9 @@ def api_chat():
 
 @app.route('/api/kline')
 def api_kline():
-    """K线数据：日K+MA5/20/60+BOLL+KDJ+成交量（支持股票/指数）"""
+    """K线数据：日/周/月K+MA+BOLL+KDJ+成交量（支持股票/指数）"""
     code = request.args.get('code', '600519')
+    period = request.args.get('period', 'daily')
     # 指数支持
     idx_map = {'000001': 'sh000001', '399001': 'sz399001', '399006': 'sz399006'}
     try:
@@ -42,6 +43,15 @@ def api_kline():
         if df is None or len(df) == 0:
             return jsonify({'error': '无数据'}), 404
         df = df.reset_index(drop=True)
+        # 周期聚合（周K/月K）
+        if period in ('weekly', 'monthly'):
+            df['date'] = pd.to_datetime(df['date'])
+            df = df.set_index('date')
+            rule = 'W' if period == 'weekly' else 'ME'
+            agg = df.resample(rule).agg({'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',
+                                         'volume': 'sum'}).dropna()
+            agg = agg.reset_index()
+            df = agg
         df['ma5'] = df['close'].rolling(5).mean()
         df['ma20'] = df['close'].rolling(20).mean()
         df['ma60'] = df['close'].rolling(60).mean()

@@ -2332,6 +2332,11 @@
                    style="display:none">
           </button>
         </div>
+        <div class="idx-switch-btns" style="margin:0 4px;">
+          <button class="idx-btn active" data-kperiod="daily" onclick="switchKlinePeriod(this, 'daily')">日K</button>
+          <button class="idx-btn" data-kperiod="weekly" onclick="switchKlinePeriod(this, 'weekly')">周K</button>
+          <button class="idx-btn" data-kperiod="monthly" onclick="switchKlinePeriod(this, 'monthly')">月K</button>
+        </div>
         <div class="period-btns">
           <button data-period="30" onclick="switchPeriod(this, 30)">1月</button>
           <button data-period="90" onclick="switchPeriod(this, 90)">3月</button>
@@ -2637,6 +2642,7 @@ function updateIndexItem(key, item) {
 let klineChart = null;
 let currentStock = '000001';
 let currentPeriod = 180;
+let currentKtype = 'daily';
 
 function initChart() {
   const dom = document.getElementById('klineChart');
@@ -2645,22 +2651,23 @@ function initChart() {
   window.addEventListener('resize', () => klineChart?.resize());
 }
 
-async function loadKline(code, period) {
+async function loadKline(code, days, ktype) {
   currentStock = code;
-  currentPeriod = period;
+  currentPeriod = days;
+  if (ktype != null) currentKtype = ktype;
   if (!klineChart) initChart();
   if (!klineChart) return;
 
   klineChart.showLoading({ text: '加载K线数据...', color: '#8b5cf6', maskColor: 'rgba(13,17,23,0.75)' });
 
   try {
-    const resp = await fetchWithTimeout(`/api/kline?code=${code}&period=${period}`);
+    const resp = await fetchWithTimeout(`/api/kline?code=${code}&period=${currentKtype}&days=${days}`);
     if (!resp.ok) throw new Error('API 错误');
     const data = await resp.json();
     renderKline(data);
   } catch {
     // 使用模拟数据展示图表结构
-    renderKline(generateMockKline(period));
+    renderKline(generateMockKline(days));
   }
 }
 
@@ -2998,8 +3005,8 @@ function renderKline(data) {
 }
 
 function switchIndex(btn, code) {
-  // 更新 active 状态
-  document.querySelectorAll('.idx-btn').forEach(b => b.classList.remove('active'));
+  // 更新 active 状态（仅限指数切换按钮，不影响K线周期按钮）
+  document.querySelectorAll('.idx-btn[data-code]').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 
   // 自定义按钮：显示输入框
@@ -3015,7 +3022,7 @@ function switchIndex(btn, code) {
   customInput.style.display = 'none';
   if (customLabel) customLabel.style.display = 'inline';
   currentStock = code;
-  loadKline(code, currentPeriod);
+  loadKline(code, currentPeriod, currentKtype);
 }
 
 function switchCustomStock() {
@@ -3023,13 +3030,19 @@ function switchCustomStock() {
   const code = input.value.trim();
   if (!code || code.length < 6) { input.focus(); return; }
   currentStock = code;
-  loadKline(code, currentPeriod);
+  loadKline(code, currentPeriod, currentKtype);
 }
 
-function switchPeriod(btn, period) {
+function switchPeriod(btn, days) {
   document.querySelectorAll('.period-btns button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  loadKline(currentStock, period);
+  loadKline(currentStock, days, currentKtype);
+}
+
+function switchKlinePeriod(btn, ktype) {
+  document.querySelectorAll('[data-kperiod]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadKline(currentStock, currentPeriod, ktype);
 }
 
 // 自定义代码输入框回车切换
@@ -5035,7 +5048,7 @@ function switchToMarketStock(code) {
   if (!code) return;
   currentStock = code;
   // 更新指数按钮 active 状态——切换到自定义
-  document.querySelectorAll('.idx-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.idx-btn[data-code]').forEach(b => b.classList.remove('active'));
   const customBtn = document.getElementById('customBtn');
   if (customBtn) customBtn.classList.add('active');
   const customInput = document.getElementById('customCodeInput');
@@ -5045,7 +5058,7 @@ function switchToMarketStock(code) {
     customInput.style.display = 'inline-block';
   }
   if (customLabel) customLabel.style.display = 'none';
-  loadKline(code, currentPeriod);
+  loadKline(code, currentPeriod, currentKtype);
 }
 
 function startMarketAutoRefresh() {
@@ -5072,7 +5085,7 @@ function startMarketAutoRefresh() {
   loadMacro();
   loadMacroChart();
   loadWatchlist();
-  loadKline(currentStock, currentPeriod);
+  loadKline(currentStock, currentPeriod, currentKtype);
   loadDecisions();     // 10s 超时，独立错误提示
   loadValuation();
   loadChips();
