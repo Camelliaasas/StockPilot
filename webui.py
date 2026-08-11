@@ -70,6 +70,19 @@ def api_kline():
     except Exception as e:
         return jsonify({'error': str(e)[:100]}), 500
 
+@app.route('/api/market')
+def api_market():
+    """市场涨跌榜（总览+涨幅/跌幅/成交额）——缓存 2 分钟"""
+    import time as _t
+    now = _t.time()
+    if hasattr(api_market, 'c_ts') and now - api_market.c_ts < 120:
+        return jsonify(api_market.c_data)
+    from market_boards import market_boards
+    r = market_boards()
+    api_market.c_data = r
+    api_market.c_ts = now
+    return jsonify(r)
+
 @app.route('/api/boards')
 def api_boards():
     """行业板块涨跌幅 TOP10"""

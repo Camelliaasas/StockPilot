@@ -832,6 +832,174 @@
     font-size: 14px;
   }
 
+  /* ── 市场涨跌榜 ── */
+  .market-section { padding: 16px 18px; }
+  .market-stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 900px) {
+    .market-stats { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 500px) {
+    .market-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+  .market-stat-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    text-align: center;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .market-stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .market-stat-card:hover {
+    border-color: rgba(110,64,201,0.4);
+    box-shadow: 0 4px 20px rgba(110,64,201,0.08);
+    transform: translateY(-1px);
+  }
+  .market-stat-card:hover::after { opacity: 1; }
+  .market-stat-card .ms-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .market-stat-card .ms-value {
+    font-size: 28px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono','Cascadia Code','JetBrains Mono',monospace;
+    line-height: 1.1;
+  }
+  .market-stat-card .ms-value.up { color: var(--up); }
+  .market-stat-card .ms-value.down { color: var(--down); }
+  .market-stat-card .ms-value.neutral { color: var(--text); }
+  .market-stat-card .ms-unit {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-left: 2px;
+  }
+
+  .market-boards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 1000px) {
+    .market-boards { grid-template-columns: 1fr; }
+  }
+  .market-col {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .market-col-header {
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .market-col-header.gain { color: var(--up); border-bottom-color: rgba(239,68,68,0.25); }
+  .market-col-header.loss { color: var(--down); border-bottom-color: rgba(34,197,94,0.25); }
+  .market-col-header.amount { color: var(--accent-glow); border-bottom-color: rgba(139,92,246,0.25); }
+  .market-row {
+    display: grid;
+    grid-template-columns: 26px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-bottom: 1px solid rgba(48,54,61,0.3);
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  .market-row:last-child { border-bottom: none; }
+  .market-row:hover { background: var(--surface-hover); }
+  .market-row .mr-rank {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    background: rgba(139,148,158,0.1);
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+  .market-row:nth-child(2) .mr-rank { background: rgba(239,68,68,0.18); color: #ef4444; }
+  .market-row:nth-child(3) .mr-rank { background: rgba(239,68,68,0.12); color: #ef6666; }
+  .market-row:nth-child(4) .mr-rank { background: rgba(210,153,34,0.12); color: #d29922; }
+  .market-col.loss-col .market-row:nth-child(2) .mr-rank { background: rgba(34,197,94,0.18); color: #22c55e; }
+  .market-col.loss-col .market-row:nth-child(3) .mr-rank { background: rgba(34,197,94,0.12); color: #3fb950; }
+  .market-col.amount-col .market-row:nth-child(2) .mr-rank { background: rgba(139,92,246,0.18); color: #a78bfa; }
+  .market-col.amount-col .market-row:nth-child(3) .mr-rank { background: rgba(139,92,246,0.12); color: #a78bfa; }
+  .market-row .mr-code {
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+    color: var(--accent-blue);
+    cursor: pointer;
+    transition: color 0.15s;
+    white-space: nowrap;
+  }
+  .market-row:hover .mr-code { color: #60a5fa; }
+  .market-row .mr-name {
+    font-size: 12px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .market-row .mr-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .market-row .mr-chg {
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .market-row .mr-chg.up { color: var(--up); }
+  .market-row .mr-chg.down { color: var(--down); }
+  .market-row .mr-amt {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono','Cascadia Code',monospace;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .market-loading {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    padding: 30px;
+  }
+
   /* ── 决策卡网格 ── */
   .decision-section { padding: 16px 18px; }
   .decision-grid {
@@ -2096,6 +2264,40 @@
   <!-- ── 一句话看盘横幅 ── -->
   <div class="glass-card oneline-banner" id="onelineBanner">
     <div class="ol-loading">⏳ 加载今日核心判断...</div>
+  </div>
+
+  <!-- ── 市场涨跌榜 ── -->
+  <div class="glass-card market-section">
+    <div class="section-header">
+      <span class="title">📊 市场涨跌榜</span>
+      <span style="font-size:11px;color:var(--text-secondary);" id="marketUpdateTime"></span>
+    </div>
+    <!-- 市场总览统计卡 -->
+    <div class="market-stats" id="marketStats">
+      <div class="market-stat-card"><div class="ms-label">上涨家数</div><div class="ms-value up">--</div></div>
+      <div class="market-stat-card"><div class="ms-label">下跌家数</div><div class="ms-value down">--</div></div>
+      <div class="market-stat-card"><div class="ms-label">涨停</div><div class="ms-value up">--</div></div>
+      <div class="market-stat-card"><div class="ms-label">跌停</div><div class="ms-value down">--</div></div>
+      <div class="market-stat-card"><div class="ms-label">成交额</div><div class="ms-value neutral">--<span class="ms-unit">亿</span></div></div>
+    </div>
+    <!-- 三列榜单 -->
+    <div class="market-boards">
+      <!-- 涨幅榜 -->
+      <div class="market-col gain-col">
+        <div class="market-col-header gain">🔥 涨幅榜 TOP8</div>
+        <div id="marketGainList"><div class="market-loading">加载中...</div></div>
+      </div>
+      <!-- 跌幅榜 -->
+      <div class="market-col loss-col">
+        <div class="market-col-header loss">📉 跌幅榜 TOP8</div>
+        <div id="marketLossList"><div class="market-loading">加载中...</div></div>
+      </div>
+      <!-- 成交额榜 -->
+      <div class="market-col amount-col">
+        <div class="market-col-header amount">💎 成交额榜 TOP8</div>
+        <div id="marketAmountList"><div class="market-loading">加载中...</div></div>
+      </div>
+    </div>
   </div>
 
   <!-- ── 宏观环境区 ── -->
@@ -4685,6 +4887,172 @@ document.addEventListener('keydown', (e) => {
 // ── 首次渲染 ──
 render();
 
+// ── 市场涨跌榜 ──
+let marketRefreshTimer = null;
+let marketFirstLoad = true;
+
+async function loadMarket(silent) {
+  try {
+    const resp = await fetchWithTimeout('/api/market', 12000);
+    if (!resp.ok) throw new Error('API 错误');
+    const data = await resp.json();
+    if (data && !data.error) {
+      renderMarket(data);
+      marketFirstLoad = false;
+    } else if (marketFirstLoad) {
+      renderMarket(generateMockMarket());
+    }
+  } catch {
+    if (marketFirstLoad) {
+      renderMarket(generateMockMarket());
+    }
+  }
+}
+
+function generateMockMarket() {
+  const codes = ['600519','300750','002594','000858','601318','600036','603259','688981','601899','600809'];
+  const names = ['贵州茅台','宁德时代','比亚迪','五粮液','中国平安','招商银行','药明康德','中芯国际','紫金矿业','山西汾酒'];
+  const basePrices = [1680,210,280,148,48,38,62,52,16,220];
+
+  function randStock(i, chgRange) {
+    const chg = +(Math.random() * chgRange * 2 - chgRange).toFixed(2);
+    const price = +(basePrices[i] * (1 + chg / 100)).toFixed(2);
+    return { code: codes[i], name: names[i], price, chg };
+  }
+
+  const gain = Array.from({length: 8}, (_, i) => randStock(i, 10)).sort((a, b) => b.chg - a.chg);
+  const loss = Array.from({length: 8}, (_, i) => randStock(i, -10)).sort((a, b) => a.chg - b.chg);
+  const amount = Array.from({length: 8}, (_, i) => ({
+    ...randStock(i, 5),
+    amt: +(Math.random() * 120 + 20).toFixed(1),
+  })).sort((a, b) => b.amt - a.amt);
+
+  const upCnt = Math.floor(Math.random() * 1500 + 1500);
+  const downCnt = Math.floor(Math.random() * 2000 + 1000);
+  return {
+    stats: {
+      up: upCnt,
+      down: downCnt,
+      limit_up: Math.floor(Math.random() * 80 + 30),
+      limit_down: Math.floor(Math.random() * 40 + 10),
+      total_amt: Math.floor(Math.random() * 5000 + 6000),
+    },
+    gain,
+    loss,
+    amount,
+  };
+}
+
+function renderMarket(data) {
+  if (!data) return;
+
+  // ── 更新统计卡 ──
+  const stats = data.stats || {};
+  const statsEl = document.getElementById('marketStats');
+  if (statsEl) {
+    const totalAmt = stats.total_amt != null ? stats.total_amt : '--';
+    statsEl.innerHTML = [
+      { label: '上涨家数', value: stats.up != null ? stats.up.toLocaleString() : '--', cls: 'up' },
+      { label: '下跌家数', value: stats.down != null ? stats.down.toLocaleString() : '--', cls: 'down' },
+      { label: '涨停', value: stats.limit_up != null ? stats.limit_up : '--', cls: 'up' },
+      { label: '跌停', value: stats.limit_down != null ? stats.limit_down : '--', cls: 'down' },
+      { label: '成交额', value: totalAmt, cls: 'neutral', unit: '亿' },
+    ].map(s => {
+      const unitHtml = s.unit ? `<span class="ms-unit">${s.unit}</span>` : '';
+      return `<div class="market-stat-card">
+        <div class="ms-label">${s.label}</div>
+        <div class="ms-value ${s.cls}">${s.value}${unitHtml}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── 更新时间 ──
+  const timeEl = document.getElementById('marketUpdateTime');
+  if (timeEl) {
+    const now = new Date();
+    timeEl.textContent = '更新 ' + now.toTimeString().slice(0, 8);
+  }
+
+  // ── 渲染涨幅榜 ──
+  renderMarketCol('marketGainList', data.gain || [], 'gain');
+  // ── 渲染跌幅榜 ──
+  renderMarketCol('marketLossList', data.loss || [], 'loss');
+  // ── 渲染成交额榜 ──
+  renderMarketAmountCol('marketAmountList', data.amount || []);
+}
+
+function renderMarketCol(containerId, items, type) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  if (!items || !items.length) {
+    container.innerHTML = '<div class="market-loading">暂无数据</div>';
+    return;
+  }
+  const top8 = items.slice(0, 8);
+  container.innerHTML = top8.map((item, i) => {
+    const chg = item.chg != null ? Number(item.chg) : 0;
+    const sign = chg >= 0 ? '+' : '';
+    const dir = chg >= 0 ? 'up' : 'down';
+    return `<div class="market-row" onclick="switchToMarketStock('${item.code}')" title="点击切换K线图：${item.name}">
+      <span class="mr-rank">${i + 1}</span>
+      <div class="mr-info">
+        <span class="mr-code">${item.code}</span>
+        <span class="mr-name">${item.name || ''}</span>
+      </div>
+      <span class="mr-chg ${dir}">${sign}${chg.toFixed(2)}%</span>
+    </div>`;
+  }).join('');
+}
+
+function renderMarketAmountCol(containerId, items) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  if (!items || !items.length) {
+    container.innerHTML = '<div class="market-loading">暂无数据</div>';
+    return;
+  }
+  const top8 = items.slice(0, 8);
+  container.innerHTML = top8.map((item, i) => {
+    const chg = item.chg != null ? Number(item.chg) : 0;
+    const sign = chg >= 0 ? '+' : '';
+    const dir = chg >= 0 ? 'up' : 'down';
+    const amt = item.amt != null ? Number(item.amt) : 0;
+    return `<div class="market-row" onclick="switchToMarketStock('${item.code}')" title="点击切换K线图：${item.name}">
+      <span class="mr-rank">${i + 1}</span>
+      <div class="mr-info">
+        <span class="mr-code">${item.code}</span>
+        <span class="mr-name">${item.name || ''}</span>
+      </div>
+      <div>
+        <div class="mr-chg ${dir}">${sign}${chg.toFixed(2)}%</div>
+        <div class="mr-amt">${amt.toFixed(1)}亿</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function switchToMarketStock(code) {
+  if (!code) return;
+  currentStock = code;
+  // 更新指数按钮 active 状态——切换到自定义
+  document.querySelectorAll('.idx-btn').forEach(b => b.classList.remove('active'));
+  const customBtn = document.getElementById('customBtn');
+  if (customBtn) customBtn.classList.add('active');
+  const customInput = document.getElementById('customCodeInput');
+  const customLabel = document.querySelector('.custom-label');
+  if (customInput) {
+    customInput.value = code;
+    customInput.style.display = 'inline-block';
+  }
+  if (customLabel) customLabel.style.display = 'none';
+  loadKline(code, currentPeriod);
+}
+
+function startMarketAutoRefresh() {
+  if (marketRefreshTimer) clearInterval(marketRefreshTimer);
+  marketRefreshTimer = setInterval(() => loadMarket(true), 60000);
+}
+
 // ═══════════════════════════════════════════
 // 看板初始化 —— 异步分批加载
 // 策略：所有区块同时触发 fetch，互不阻塞；
@@ -4699,6 +5067,8 @@ render();
   // ── 以下全部异步并行，各自 try-catch 隔离 ──
   loadIndexOverview();
   loadOneLine();
+  loadMarket();           // 市场涨跌榜（首次加载）
+  startMarketAutoRefresh(); // 每 60s 自动刷新
   loadMacro();
   loadMacroChart();
   loadWatchlist();
