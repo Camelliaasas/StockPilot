@@ -198,13 +198,35 @@ def api_sector_fund():
 
 @app.route('/api/market')
 def api_market():
-    """市场涨跌榜（总览+涨幅/跌幅/成交额）——缓存 2 分钟"""
+    """市场涨跌榜（总览+涨幅/跌幅/成交额）——DB 秒查（替代新浪慢拉取）"""
     import time as _t
+    import pandas as _pd
     now = _t.time()
     if hasattr(api_market, 'c_ts') and now - api_market.c_ts < 120:
         return jsonify(api_market.c_data)
-    from market_boards import market_boards
-    r = market_boards()
+    from db import get_conn as _gc
+    conn = _gc()
+    last2 = conn.execute('SELECT DISTINCT date FROM daily_prices ORDER BY date DESC LIMIT 2').fetchall()
+    if len(last2) < 2:
+        conn.close()
+        return jsonify({'error': '数据不足'}), 404
+    d1, d0 = last2[0]['date'], last2[1]['date']
+    p1 = _pd.read_sql(f"SELECT code, close FROM daily_prices WHERE date='{d1}'", conn)
+    p0 = _pd.read_sql(f"SELECT code, close FROM daily_prices WHERE date='{d0}'", conn)
+    conn.close()
+    m = p1.merge(p0, on='code', suffixes=('_1', '_0'))
+    m['chg'] = (m['close_1'] / m['close_0'] - 1) * 100
+    m['amt'] = 0.0
+    up = len(m[m['chg'] > 0])
+    down = len(m[m['chg'] < 0])
+    limit_up = len(m[m['chg'] > 9.5])
+    limit_down = len(m[m['chg'] < -9.5])
+    gain = m.nlargest(8, 'chg')[['code', 'chg']].to_dict('records')
+    loss = m.nsmallest(8, 'chg')[['code', 'chg']].to_dict('records')
+    r = {'stats': {'up': up, 'down': down, 'limit_up': limit_up, 'limit_down': limit_down, 'total_amt': 0},
+         'gain': [{'code': x['code'], 'chg': round(x['chg'], 2)} for x in gain],
+         'loss': [{'code': x['code'], 'chg': round(x['chg'], 2)} for x in loss],
+         'amount': []}
     api_market.c_data = r
     api_market.c_ts = now
     return jsonify(r)
