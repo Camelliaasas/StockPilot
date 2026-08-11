@@ -517,4 +517,10 @@ def api_futures():
     return jsonify(out)
 
 if __name__ == '__main__':
+    # 首次运行自动加载演示数据（已有数据跳过）
+    try:
+        from demo_loader import load_demo
+        load_demo()
+    except Exception:
+        pass
     app.run(host='127.0.0.1', port=5521, debug=False, threaded=True)
