@@ -705,7 +705,13 @@ def api_futures():
     return jsonify(out)
 
 if __name__ == '__main__':
-    # 首次启动：若库为空——直接导入内置演示数据（读+插——无锁——已验证）
+    # 初始化数据库表（exe 干净库必需——先建表再导入）
+    try:
+        from db import init_db
+        init_db()
+    except Exception:
+        pass
+    # 首次启动：若库为空——导入内置演示数据（读+插 4 表——无锁）
     try:
         import os as _os
         from paths import data_path
@@ -723,12 +729,6 @@ if __name__ == '__main__':
         if _empty:
             from demo_loader import load_demo
             load_demo()
-    except Exception:
-        pass
-    # 初始化数据库表（exe 干净库必需）
-    try:
-        from db import init_db
-        init_db()
     except Exception:
         pass
     # 回测战绩为空时后台自动生成（5.4 万样本——用户也有充足验证）
