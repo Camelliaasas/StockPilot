@@ -1578,6 +1578,15 @@ async function boot(){
   });
   // 定时刷新（30秒轻刷新顶部）
   setInterval(()=>{ loadIndex(); loadMarket(); }, 30000);
+  // 定时补载（首次启动 demo 数据就绪后——空图表自动补齐）
+  setInterval(()=>{
+    try{
+      const k = document.getElementById('klineChart');
+      if(k && !k.querySelector('canvas,svg') && !k.innerText.includes('加载')) loadKline();
+      const c = document.getElementById('curveChart');
+      if(c && !c.querySelector('canvas,svg') && !c.innerText.includes('暂无')) loadCurve();
+    }catch(e){}
+  }, 20000);
 }
 
 document.addEventListener('DOMContentLoaded', boot);
