@@ -3160,6 +3160,9 @@
 </div>
 
 <script>
+// ── XSS 全局转义函数 ──
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
 // ═══════════════════════════════════════════
 // 工具函数
 // ═══════════════════════════════════════════
@@ -3833,9 +3836,9 @@ function renderBoards(boards) {
     return `
       <div class="board-row">
         <span class="rank">${i + 1}</span>
-        <span class="b-name">${b.name}</span>
+        <span class="b-name">${esc(b.name)}</span>
         <span class="b-change ${dir}">${chg >= 0 ? '+' : ''}${b.change}%</span>
-        <span class="b-amount">${b.amount}</span>
+        <span class="b-amount">${esc(b.amount)}</span>
       </div>
     `;
   }).join('');
@@ -3872,10 +3875,10 @@ function renderSectorFund(data) {
       return `
         <div class="sf-item">
           <div class="sf-item-top">
-            <span class="sf-name">${i + 1}. ${x.name}</span>
+            <span class="sf-name">${i + 1}. ${esc(x.name)}</span>
             <div class="sf-meta">
               <span class="sf-chg up">${x.chg >= 0 ? '+' : ''}${x.chg}%</span>
-              <span class="sf-amt">成交 ${x.amt} 亿</span>
+              <span class="sf-amt">成交 ${esc(x.amt)} 亿</span>
             </div>
           </div>
           <div class="sf-bar-wrap">
@@ -3898,10 +3901,10 @@ function renderSectorFund(data) {
       return `
         <div class="sf-item">
           <div class="sf-item-top">
-            <span class="sf-name">${i + 1}. ${x.name}</span>
+            <span class="sf-name">${i + 1}. ${esc(x.name)}</span>
             <div class="sf-meta">
               <span class="sf-chg down">${x.chg >= 0 ? '+' : ''}${x.chg}%</span>
-              <span class="sf-amt">成交 ${x.amt} 亿</span>
+              <span class="sf-amt">成交 ${esc(x.amt)} 亿</span>
             </div>
           </div>
           <div class="sf-bar-wrap">
@@ -3964,12 +3967,12 @@ function renderPredictions(preds) {
     return `
       <div class="predict-item">
         <div class="p-head">
-          <span class="p-code">${p.code}</span>
-          <span class="p-date">${p.date}</span>
+          <span class="p-code">${esc(p.code)}</span>
+          <span class="p-date">${esc(p.date)}</span>
         </div>
-        <span class="p-dir ${p.direction}">${dirLabel[p.direction] || p.direction}</span>
+        <span class="p-dir ${p.direction}">${dirLabel[p.direction] || esc(p.direction)}</span>
         <div class="p-confidence">置信度：${p.confidence || '--'}%</div>
-        <div class="p-reason">${p.reason || ''}</div>
+        <div class="p-reason">${esc(p.reason || '')}</div>
       </div>
     `;
   }).join('');
@@ -4099,8 +4102,8 @@ function renderTrend(data) {
     html += '<div class="t-items">';
     data.big.forEach(item => {
       html += `<div class="t-item">
-        <div class="t-title">${item.title}</div>
-        <div class="t-desc">${item.desc}</div>
+        <div class="t-title">${esc(item.title)}</div>
+        <div class="t-desc">${esc(item.desc)}</div>
       </div>`;
     });
     html += '</div></div>';
@@ -4113,8 +4116,8 @@ function renderTrend(data) {
     html += '<div class="t-items">';
     data.mid.forEach(item => {
       html += `<div class="t-item">
-        <div class="t-title">${item.title}</div>
-        <div class="t-desc">${item.desc}</div>
+        <div class="t-title">${esc(item.title)}</div>
+        <div class="t-desc">${esc(item.desc)}</div>
       </div>`;
     });
     html += '</div></div>';
@@ -4123,10 +4126,10 @@ function renderTrend(data) {
   // 小事件 → 短期板块情绪
   if (data.small) {
     html += '<div class="trend-block">';
-    html += '<div class="t-label"><span class="badge">小事件</span> ' + (data.small.label || '短期板块情绪') + '</div>';
+    html += '<div class="t-label"><span class="badge">小事件</span> ' + esc(data.small.label || '短期板块情绪') + '</div>';
     html += '<div class="t-content">';
     const items = data.small.items || [];
-    items.forEach(t => { html += `• ${t}<br/>`; });
+    items.forEach(t => { html += `• ${esc(t)}<br/>`; });
     html += '</div></div>';
   }
 
@@ -4134,7 +4137,7 @@ function renderTrend(data) {
   if (data.summary && data.summary.text) {
     html += '<div class="trend-block">';
     html += '<div class="t-label">📋 综合摘要</div>';
-    html += `<div class="t-summary">${data.summary.text}</div>`;
+    html += `<div class="t-summary">${esc(data.summary.text)}</div>`;
     html += '</div>';
   }
 
@@ -4148,7 +4151,7 @@ async function loadOneLine() {
     const resp = await fetchWithTimeout('/api/oneline');
     if (!resp.ok) throw new Error('API 错误');
     const data = await resp.json();
-    el.innerHTML = `<span class="ol-icon">📡</span><span class="ol-text">${data.line || '市场数据加载中...'}</span>`;
+    el.innerHTML = `<span class="ol-icon">📡</span><span class="ol-text">${esc(data.line || '市场数据加载中...')}</span>`;
   } catch {
     el.innerHTML = '<span class="ol-icon">📡</span><span class="ol-text">今日核心判断：短期大盘震荡偏强，科技成长风格占优，仓位建议 6-7 成，关注量能变化。</span>';
   }
@@ -4179,12 +4182,12 @@ function renderDecisions(items) {
     const [label, cls] = actionMap[d.action] || ['观望','watch'];
     const safeName = (d.name || '').replace(/'/g, "\\'");
     const safeCode = (d.code || '').replace(/'/g, "\\'");
-    return `<div class="decision-card" onclick="openStockDetail('${safeName}', '${safeCode}')" style="cursor:pointer;" title="点击查看详情：${d.name}">
-      <div class="dc-name">${d.name}</div>
+    return `<div class="decision-card" onclick="openStockDetail('${safeName}', '${safeCode}')" style="cursor:pointer;" title="点击查看详情：${esc(d.name)}">
+      <div class="dc-name">${esc(d.name)}</div>
       <div class="dc-price">¥${Number(d.price).toFixed(2)}</div>
       <div class="dc-meta">
-        <span class="dc-action ${cls}">${label}</span>
-        <span class="dc-position">仓位 ${d.position || '--'}</span>
+        <span class="dc-action ${cls}">${esc(label)}</span>
+        <span class="dc-position">仓位 ${esc(d.position || '--')}</span>
       </div>
     </div>`;
   }).join('');
@@ -4213,10 +4216,10 @@ function renderValuation(items) {
     const barCls = v.pe_pct < 30 ? 'low' : v.pe_pct < 70 ? 'mid' : 'high';
     const verdictCls = v.cls || (v.pe_pct < 30 ? 'cheap' : v.pe_pct < 70 ? 'fair' : 'expensive');
     return `<div class="valuation-row">
-      <span class="val-name">${v.name}</span>
+      <span class="val-name">${esc(v.name)}</span>
       <div class="val-bar-wrap"><div class="val-bar-fill ${barCls}" style="width:${v.pe_pct}%"></div></div>
       <span class="val-pct">PE ${v.pe} · ${v.pe_pct}%</span>
-      <span class="val-verdict ${verdictCls}">${v.verdict}</span>
+      <span class="val-verdict ${verdictCls}">${esc(v.verdict)}</span>
     </div>`;
   }).join('');
 }
@@ -4245,8 +4248,8 @@ function renderChips(items) {
     if (c.signal.includes('集中')) cls = 'concentrate';
     else if (c.signal.includes('分散')) cls = 'disperse';
     return `<div class="chip-card">
-      <span class="ch-name">${c.name}</span>
-      <span class="chip-signal ${cls}"><span class="ch-dot"></span>${c.signal}</span>
+      <span class="ch-name">${esc(c.name)}</span>
+      <span class="chip-signal ${cls}"><span class="ch-dot"></span>${esc(c.signal)}</span>
     </div>`;
   }).join('');
 }
@@ -4469,7 +4472,7 @@ function renderPortfolio(data) {
   if (data.names && data.names.length) {
     namesEl.style.display = "flex";
     namesEl.innerHTML = "<span class=\"pf-names-label\">组合成分：</span>" +
-      data.names.map(n => `<span class="pf-tag">${n}</span>`).join("");
+      data.names.map(n => `<span class="pf-tag">${esc(n)}</span>`).join("");
   } else {
     namesEl.style.display = "none";
   }
@@ -4497,7 +4500,7 @@ function renderRisk(data) {
   listEl.innerHTML = data.alerts.map(a =>
     `<div class="risk-alert">
       <span class="ra-icon">🚨</span>
-      <span class="ra-msg">${a.msg}</span>
+      <span class="ra-msg">${esc(a.msg)}</span>
     </div>`
   ).join("");
 }
@@ -4546,7 +4549,7 @@ function renderRisk(data) {
 	    const excessCls = r.excess >= 0 ? "positive" : "negative";
 	    const excessSign = r.excess >= 0 ? "+" : "";
 	    return "<tr>" +
-	      "<td>" + r.strategy + "</td>" +
+	      "<td>" + esc(r.strategy) + "</td>" +
 	      "<td><span class=\"bt-wins\">" + r.wins + "/" + r.total + "</span></td>" +
 	      "<td><span class=\"bt-excess " + excessCls + "\">" + excessSign + r.excess.toFixed(1) + "%</span></td>" +
 	      "</tr>";
@@ -4660,7 +4663,7 @@ function renderRisk(data) {
 		      const holdingText = s.holding ? "持仓" : "空仓";
 		      const labelCls = labelClsMap[s.strategy_label] || "";
 		      return '<div class="pc-strat-row">'
-		        + '<span class="pc-strat-label ' + labelCls + '">' + s.strategy_label + '</span>'
+		        + '<span class="pc-strat-label ' + labelCls + '">' + esc(s.strategy_label) + '</span>'
 		        + '<span class="pc-strat-ret ' + retCls + '">' + retSign + s.ret + '%</span>'
 		        + '<div class="pc-strat-meta">'
 		        + '<span class="ps-trades">交易 <span>' + (s.trades_count || 0) + '</span> 次</span>'
@@ -4671,8 +4674,8 @@ function renderRisk(data) {
 
 		    return '<div class="paper-card" id="paperCard' + i + '" onclick="togglePaperCard(' + i + ')">'
 		      + '<div class="pc-header">'
-		      + '<span class="pc-name">' + d.name + '</span>'
-		      + '<span class="pc-code">' + d.code + '</span>'
+		      + '<span class="pc-name">' + esc(d.name) + '</span>'
+		      + '<span class="pc-code">' + esc(d.code) + '</span>'
 		      + '</div>'
 		      + '<div class="pc-strategies">'
 		      + stratRows
@@ -4736,15 +4739,15 @@ function renderRisk(data) {
 		      html += '<div class="pt-strat-section">';
 		      html += '<span class="pt-strat-label ' + labelCls + '" style="background:rgba('
 		        + (si === 0 ? '255,140,66' : si === 1 ? '59,130,246' : '168,123,250')
-		        + ',0.12);color:' + color + '">' + s.strategy_label + '</span>';
+		        + ',0.12);color:' + color + '">' + esc(s.strategy_label) + '</span>';
 		      if (recentTrades.length === 0) {
 		        html += '<div class="pt-empty">暂无交易</div>';
 		      } else {
 		        recentTrades.forEach(t => {
 		          const actCls = t.action === "BUY" ? "buy" : "sell";
 		          html += '<div class="pt-trade-row">'
-		            + '<span class="pt-trade-date">' + (t.date || "") + '</span>'
-		            + '<span class="pt-trade-action ' + actCls + '">' + t.action + '</span>'
+		            + '<span class="pt-trade-date">' + esc(t.date || "") + '</span>'
+		            + '<span class="pt-trade-action ' + actCls + '">' + esc(t.action) + '</span>'
 		            + '<span class="pt-trade-price">¥' + (t.price || 0) + '</span>'
 		            + '<span class="pt-trade-shares">' + (t.shares || 0) + '股</span>'
 		            + '</div>';
@@ -4919,7 +4922,7 @@ function renderVerify(data) {
   if (byVer.length) {
     html += '<table class="verify-table-mini"><thead><tr><th>股票</th><th>验证数</th><th>准确率</th></tr></thead><tbody>';
     byVer.forEach(v => {
-      html += '<tr><td>' + v.ver + '</td><td>' + v.n + '</td><td>' + v.acc.toFixed(1) + '%</td></tr>';
+      html += '<tr><td>' + esc(v.ver) + '</td><td>' + v.n + '</td><td>' + v.acc.toFixed(1) + '%</td></tr>';
     });
     html += '</tbody></table>';
   } else {
@@ -4940,7 +4943,7 @@ function renderVerify(data) {
       const badge = r.correct
         ? '<span class="verify-badge correct">✅</span>'
         : '<span class="verify-badge wrong">❌</span>';
-      html += '<tr><td>' + r.date + '</td><td>' + r.code + '</td><td>' + pred + '</td><td>' + actualLabel + '</td><td>' + badge + '</td></tr>';
+      html += '<tr><td>' + esc(r.date) + '</td><td>' + esc(r.code) + '</td><td>' + pred + '</td><td>' + actualLabel + '</td><td>' + badge + '</td></tr>';
     });
     html += '</tbody></table>';
   } else {
@@ -5254,11 +5257,11 @@ function renderFutures(items) {
     const trendLabel = { bull:'多头', bear:'空头', shock:'震荡' };
     const sigCls = f.signal === '做多' ? 'long' : f.signal === '做空' ? 'short' : 'wait';
     return `<div class="future-card">
-      <div class="fu-name">${f.name}</div>
-      <div class="fu-price">${f.cur}</div>
+      <div class="fu-name">${esc(f.name)}</div>
+      <div class="fu-price">${esc(f.cur)}</div>
       <div class="fu-meta">
-        <span class="fu-trend ${f.trend}">${trendLabel[f.trend] || f.trend}</span>
-        <span class="fu-signal-tag ${sigCls}">${f.signal}</span>
+        <span class="fu-trend ${f.trend}">${trendLabel[f.trend] || esc(f.trend)}</span>
+        <span class="fu-signal-tag ${sigCls}">${esc(f.signal)}</span>
       </div>
       <div class="fu-confidence">置信度 ${f.conf}%</div>
     </div>`;
@@ -5303,9 +5306,9 @@ function renderMacro(data) {
 
   grid.innerHTML = data.parts.map(p => `
     <div class="macro-card">
-      <div class="mc-label">${p.label}</div>
-      <div class="mc-value">${p.value || '--'}</div>
-      <div class="mc-sub">${p.sub || ''}</div>
+      <div class="mc-label">${esc(p.label)}</div>
+      <div class="mc-value">${esc(p.value || '--')}</div>
+      <div class="mc-sub">${esc(p.sub || '')}</div>
     </div>
   `).join('');
 
@@ -5529,9 +5532,9 @@ function renderWatchlist(items) {
     const safeCode = (s.code || '').replace(/'/g, "\\'");
     return `
     <div class="wl-row">
-      <span class="wl-code" onclick="openStockDetail('${safeName}','${safeCode}')" style="cursor:pointer;" title="点击查看详情">${s.code}</span>
-      <span class="wl-name" onclick="openStockDetail('${safeName}','${safeCode}')" style="cursor:pointer;" title="点击查看详情">${s.name}</span>
-      <button class="btn-del" onclick="event.stopPropagation();deleteFromWatchlist('${s.code}')">✕ 删除</button>
+      <span class="wl-code" onclick="openStockDetail('${safeName}','${safeCode}')" style="cursor:pointer;" title="点击查看详情">${esc(s.code)}</span>
+      <span class="wl-name" onclick="openStockDetail('${safeName}','${safeCode}')" style="cursor:pointer;" title="点击查看详情">${esc(s.name)}</span>
+      <button class="btn-del" onclick="event.stopPropagation();deleteFromWatchlist('${safeCode}')">✕ 删除</button>
     </div>
   `}).join('');
 }
@@ -5652,8 +5655,8 @@ function renderPositions(data) {
           const sn = (p.name || '').replace(/'/g, "\\'");
           const sc = (p.code || '').replace(/'/g, "\\'");
           return `<tr>
-            <td><span class="pos-code" onclick="openStockDetail('${sn}','${sc}')" title="点击查看详情">${p.code}</span></td>
-            <td>${p.name || '--'}</td>
+            <td><span class="pos-code" onclick="openStockDetail('${sn}','${sc}')" title="点击查看详情">${esc(p.code)}</span></td>
+            <td>${esc(p.name || '--')}</td>
             <td>${(p.shares || 0).toLocaleString()}</td>
             <td>¥${(p.cost || 0).toFixed(2)}</td>
             <td>¥${(p.cur || 0).toFixed(2)}</td>
@@ -5979,11 +5982,11 @@ function renderMarketCol(containerId, items, type) {
     const sign = chg >= 0 ? '+' : '';
     const dir = chg >= 0 ? 'up' : 'down';
     const safeName = (item.name || '').replace(/'/g, "\\'");
-    return `<div class="market-row" onclick="switchToMarketStock('${item.code}');openStockDetail('${safeName}','${item.code}')" title="点击查看详情：${item.name}">
+    return `<div class="market-row" onclick="switchToMarketStock('${item.code}');openStockDetail('${safeName}','${item.code}')" title="点击查看详情：${esc(item.name)}">
       <span class="mr-rank">${i + 1}</span>
       <div class="mr-info">
-        <span class="mr-code">${item.code}</span>
-        <span class="mr-name">${item.name || ''}</span>
+        <span class="mr-code">${esc(item.code)}</span>
+        <span class="mr-name">${esc(item.name || '')}</span>
       </div>
       <span class="mr-chg ${dir}">${sign}${chg.toFixed(2)}%</span>
     </div>`;
@@ -6004,11 +6007,11 @@ function renderMarketAmountCol(containerId, items) {
     const dir = chg >= 0 ? 'up' : 'down';
     const amt = item.amt != null ? Number(item.amt) : 0;
     const safeName = (item.name || '').replace(/'/g, "\\'");
-    return `<div class="market-row" onclick="switchToMarketStock('${item.code}');openStockDetail('${safeName}','${item.code}')" title="点击查看详情：${item.name}">
+    return `<div class="market-row" onclick="switchToMarketStock('${item.code}');openStockDetail('${safeName}','${item.code}')" title="点击查看详情：${esc(item.name)}">
       <span class="mr-rank">${i + 1}</span>
       <div class="mr-info">
-        <span class="mr-code">${item.code}</span>
-        <span class="mr-name">${item.name || ''}</span>
+        <span class="mr-code">${esc(item.code)}</span>
+        <span class="mr-name">${esc(item.name || '')}</span>
       </div>
       <div>
         <div class="mr-chg ${dir}">${sign}${chg.toFixed(2)}%</div>
@@ -6072,12 +6075,10 @@ function renderMessages() {
   }
   const visible = allMessages.slice(0, messageVisibleCount);
   list.innerHTML = visible.map(function(m) {
-    var job = (m.job || '').replace(/</g, '&lt;');
-    var preview = (m.preview || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return '<div class="message-row">' +
-      '<span class="msg-time">' + (m.time_str || '') + '</span>' +
-      '<span class="msg-job">' + job + '</span>' +
-      '<span class="msg-preview">' + preview + '</span>' +
+      '<span class="msg-time">' + esc(m.time_str || '') + '</span>' +
+      '<span class="msg-job">' + esc(m.job || '') + '</span>' +
+      '<span class="msg-preview">' + esc(m.preview || '') + '</span>' +
       '</div>';
   }).join('');
   footer.style.display = allMessages.length > messageVisibleCount ? '' : 'none';
@@ -6156,7 +6157,7 @@ function openStockDetail(name, code) {
 
   // 显示加载状态
   const bodyEl = document.getElementById('sdBody');
-  bodyEl.innerHTML = '<div class="sd-loading"><div class="sd-spinner"></div><div>正在分析 ' + displayName + '...</div></div>';
+  bodyEl.innerHTML = '<div class="sd-loading"><div class="sd-spinner"></div><div>正在分析 ' + esc(displayName) + '...</div></div>';
 
   // 打开抽屉
   document.getElementById('stockDrawer').classList.add('open');
@@ -6210,7 +6211,7 @@ async function fetchStockAnalysis(stockName, query) {
     bodyEl.innerHTML =
       '<div class="sd-loading" style="color:var(--danger);">' +
       '<div>⚠️ 分析加载失败</div>' +
-      '<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;">' + err.message + '</div>' +
+      '<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;">' + esc(err.message) + '</div>' +
       '<button onclick="openStockDetail(\'' + safeName + '\',\'' + safeCode + '\')" ' +
       'style="margin-top:14px;padding:7px 18px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-size:12px;">' +
       '🔄 重试</button>' +
