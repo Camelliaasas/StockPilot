@@ -705,6 +705,33 @@ def api_futures():
     return jsonify(out)
 
 if __name__ == '__main__':
+    # 首次启动：若库为空——直接复制内置演示库（无连接无锁——init_db 前）
+    try:
+        import os as _os
+        import shutil as _sh
+        from paths import project_root, data_path
+        _dbp = data_path()
+        _empty = True
+        if _os.path.exists(_dbp):
+            try:
+                import sqlite3
+                _c0 = sqlite3.connect(_dbp)
+                _n0 = _c0.execute('SELECT COUNT(*) FROM daily_prices').fetchone()[0]
+                _c0.close()
+                _empty = _n0 < 100
+            except Exception:
+                _empty = True
+        _demo_src = _os.path.join(project_root(), 'demo_data.db')
+        if _empty and _os.path.exists(_demo_src) and _dbp != _demo_src:
+            # 复制（此刻无任何连接——无锁）
+            _os.makedirs(_os.path.dirname(_dbp), exist_ok=True)
+            for _ext in ['', '-wal', '-shm']:
+                if _os.path.exists(_dbp + _ext):
+                    _os.remove(_dbp + _ext)
+            _sh.copyfile(_demo_src, _dbp)
+            print(f'✅ 内置演示库复制完成（{_os.path.getsize(_dbp)//1024}KB）')
+    except Exception:
+        pass
     # 初始化数据库表（exe 干净库必需）
     try:
         from db import init_db
