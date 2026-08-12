@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "webui.py", line 6, in <module>
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "pyimod02_importers.py", line 457, in exec_module
+  File "chat_engine.py", line 4, in <module>
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "pyimod02_importers.py", line 457, in exec_module
+  File "akshare\__init__.py", line 5898, in <module>
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "pyimod02_importers.py", line 457, in exec_module
+  File "akshare\futures\futures_basis.py", line 28, in <module>
+  File "akshare\futures\cons.py", line 585, in get_calendar
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\23643\\src_workflow\\stock_predict\\dist\\StockPilot\\_internal\\akshare\\file_fold\\calendar.json'

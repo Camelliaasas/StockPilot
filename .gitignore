@@ -4,3 +4,6 @@ pull_progress.json
 __pycache__/
 .env
 *.log
+dist/
+build/
+*.spec.bak

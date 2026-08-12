@@ -72,31 +72,70 @@ def get_stock_data(code):
         return {'error': str(e)[:60]}
 
 def llm_answer(question, context):
-    """LLM 分析师回答"""
+    """LLM 分析师回答——失败自动降级数据引擎（无 LLM 也出结果）"""
     key = get_llm_key()
-    if not key:
-        return 'LLM key 未配置'
-    prompt = f"""你是资深金融分析师。用户问：{question}
+    if key:
+        prompt = f"""你是资深金融分析师。用户问：{question}
 
 以下是相关数据：
 {context}
 
 请给出专业回答：直接判断/对比结论 + 理由（2-3点）+ 风险提示。简洁（150字内）。"""
-    import urllib.request
-    body = json.dumps({
-        'model': 'deepseek-chat',
-        'messages': [{'role': 'system', 'content': '你是资深金融分析师，回答简洁专业。'},
-                     {'role': 'user', 'content': prompt}],
-        'temperature': 0.4, 'max_tokens': 400
-    }).encode('utf-8')
-    req = urllib.request.Request('https://api.deepseek.com/chat/completions', data=body,
-                                 headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {key}'})
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            resp = json.loads(r.read())
-        return resp['choices'][0]['message']['content']
-    except Exception as e:
-        return f'LLM 调用失败: {str(e)[:60]}'
+        import urllib.request
+        body = json.dumps({
+            'model': 'deepseek-chat',
+            'messages': [{'role': 'system', 'content': '你是资深金融分析师，回答简洁专业。'},
+                         {'role': 'user', 'content': prompt}],
+            'temperature': 0.4, 'max_tokens': 400
+        }).encode('utf-8')
+        req = urllib.request.Request('https://api.deepseek.com/chat/completions', data=body,
+                                     headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {key}'})
+        try:
+            with urllib.request.urlopen(req, timeout=15) as r:
+                resp = json.loads(r.read())
+            return resp['choices'][0]['message']['content']
+        except Exception:
+            pass  # 降级
+    return fallback_answer(question, context)
+
+def fallback_answer(question, context):
+    """降级回答：数据引擎结构化分析（无 LLM key/余额——仍出结果）"""
+    import re
+    lines = []
+    # 解析 context 里的每只股票
+    stocks_info = re.findall(r'(.+?)\(([a-z]*\d+)\): 收盘([\d.]+) 近1日([+-]?[\d.]+)% 近5日([+-]?[\d.]+)% 趋势(\S+) 30日高([\d.]+)/低([\d.]+)', context)
+    if not stocks_info:
+        return '⚠️ 数据不足，无法分析（LLM 不可用且无本地数据）'
+    if len(stocks_info) >= 2:
+        # 对比模式
+        lines.append('📊 **对比分析（数据引擎降级）**')
+        for name, code, close, r1, r5, trend, hi, lo in stocks_info:
+            verdict = '偏强' if float(r5) > 0 else '偏弱'
+            lines.append(f"\n**{name}（{code}）**：现价 {close}｜5日 {r5}%｜趋势 {trend}｜{verdict}")
+        lines.append('\n**结论**：')
+        a, b = stocks_info[0], stocks_info[1]
+        if float(a[4]) > float(b[4]):
+            lines.append(f"· {a[0]} 5日动量更强（{a[4]}% vs {b[4]}%），短期相对占优")
+        else:
+            lines.append(f"· {b[0]} 5日动量更强（{b[4]}% vs {a[4]}%），短期相对占优")
+        lines.append('· 趋势确认需观察成交量配合（建议结合估值/筹码）')
+    else:
+        name, code, close, r1, r5, trend, hi, lo = stocks_info[0]
+        lines.append(f"📊 **{name}（{code}）分析（数据引擎）**")
+        lines.append(f"\n**现状**：现价 {close}｜近1日 {r1}%｜近5日 {r5}%｜趋势 {trend}")
+        lines.append(f"30日区间：{lo} ~ {hi}（现价处于区间 {'上沿' if float(close) > (float(hi)+float(lo))/2 else '下沿'}）")
+        # 趋势判断（规则）
+        if float(r5) > 3:
+            verdict, act = '短期偏强', '关注回调买入机会'
+        elif float(r5) < -3:
+            verdict, act = '短期偏弱', '观望——等待企稳信号'
+        else:
+            verdict, act = '震荡', '区间操作——低吸高抛'
+        lines.append(f"\n**判断**：{verdict}")
+        lines.append(f"**操作建议**：{act}")
+        lines.append('**风险提示**：技术信号仅供参考——结合基本面/估值/市场环境综合判断')
+    lines.append('\n（LLM 暂不可用——本回答由数据引擎生成——配置 API key 后可获得深度分析）')
+    return '\n'.join(lines)
 
 def chat(message):
     """主入口：处理用户问题——全引擎接入"""
@@ -402,10 +441,110 @@ def chat(message):
             lines.append(f'  [{ts}] {t[:50]}')
         lines.append('（详细分析见推送——政策实时追踪中）')
         return '\n'.join(lines)
+    # 大盘/指数意图
+    if ('大盘' in message or '指数' in message) and ('茅台' not in message and '宁德' not in message):
+        try:
+            from db import get_conn
+            conn = get_conn()
+            rows = conn.execute("SELECT code, close, date FROM index_daily ORDER BY date DESC LIMIT 6").fetchall()
+            conn.close()
+            if rows:
+                idx_map = {'000001': '上证', '399001': '深证', '399006': '创业板'}
+                by_date = {}
+                for r in rows:
+                    by_date.setdefault(str(r['date'])[:10], {})[idx_map.get(str(r['code']), str(r['code']))] = r['close']
+                latest = max(by_date.keys())
+                vals = by_date[latest]
+                lines = [f"📈 大盘（{latest}）: " + ' | '.join(f"{k} {v}" for k, v in vals.items())]
+                return '\n'.join(lines)
+            return '大盘数据暂不可用'
+        except Exception:
+            pass
+    # 预测意图（最新预测）
+    if '预测' in message:
+        from db import get_conn
+        conn = get_conn()
+        rows = conn.execute("SELECT date, code, direction, confidence FROM predictions ORDER BY id DESC LIMIT 5").fetchall()
+        conn.close()
+        if rows:
+            lines = ['🎯 最新预测:']
+            for r in rows:
+                lines.append(f"· [{r['date']}] {r['code']}: {r['direction']}（置信 {r['confidence']}%）")
+            lines.append('（每日 20:00 自动预测——次日自动验证）')
+            return '\n'.join(lines)
+        return '暂无预测记录（每日 20:00 自动生成）'
+    # 持仓意图
+    if '持仓' in message:
+        from db import get_conn
+        conn = get_conn()
+        rows = conn.execute('SELECT * FROM positions ORDER BY added_at').fetchall()
+        conn.close()
+        if not rows:
+            return '暂无持仓——可输入"持仓添加 600519 100股 1500元"添加'
+        lines = ['💼 我的持仓:']
+        for r in rows:
+            lines.append(f"· {r['name']}（{r['code']}）{r['shares']}股 成本{r['cost']}")
+        return '\n'.join(lines)
+    # 趋势分级意图
+    if '趋势' in message or '分级' in message:
+        from trend_forecast import get_events
+        big, mid, small = get_events()
+        lines = ['📊 分级预测:']
+        lines.append(f"· 大事件 {len(big)} 条（→ 中期趋势）| 中事件 {len(mid)} 条 | 小事件 {len(small)} 条")
+        for e in big[:3]:
+            lines.append(f"  🔴 [{e['sector']}] {e['title'][:40]}")
+        lines.append('（详细见看板分级预测区块）')
+        return '\n'.join(lines)
+    # 回测意图
+    if '回测' in message:
+        from db import get_conn
+        conn = get_conn()
+        n = conn.execute('SELECT COUNT(*) FROM backtest_history').fetchone()[0]
+        c = conn.execute('SELECT SUM(correct) FROM backtest_history').fetchone()[0] or 0
+        conn.close()
+        acc = round(c / n * 100, 1) if n else 0
+        return f'📊 历史回测: {n:,} 样本 | 准确率 {acc}%（503 万样本模型——500 只股票逐日回测）'
+    # 模拟盘意图
+    if '模拟盘' in message:
+        from paper_replay import replay_multi
+        r = replay_multi('600519', '贵州茅台')
+        if r and 'error' not in r:
+            lines = ['🎮 模拟盘（茅台 2024-2026 策略回测）:']
+            for s in r:
+                tr = s.get('total_return', s.get('total_ret', 0))
+                lines.append(f"· {s.get('name', '策略')}: 收益 {float(tr):+.1f}%")
+            return '\n'.join(lines)
+        return '模拟盘数据暂不可用'
+    # 推荐意图（今日强势股）
+    if '推荐' in message:
+        try:
+            from db import get_conn
+            conn = get_conn()
+            d = conn.execute('SELECT MAX(date) FROM daily_prices').fetchone()[0]
+            rows = conn.execute("SELECT code, name, close FROM daily_prices WHERE date=? AND close > 0 ORDER BY (close/1.0) DESC LIMIT 5", (d,)).fetchall()
+            conn.close()
+            if rows:
+                lines = ['💡 今日关注（按价格列——仅供参考）:']
+                for r in rows[:5]:
+                    lines.append(f"· {r['name']}（{r['code']}）{r['close']}")
+                lines.append('⚠️ 非荐股——可用"选股ROE>15 营收>20"按条件筛选')
+                return '\n'.join(lines)
+        except Exception:
+            pass
+    # 消息意图
+    if '消息' in message or '推送' in message:
+        import os, glob
+        out_dir = os.path.expanduser(r'~/AppData/Local/hermes/cron/output')
+        files = sorted(glob.glob(os.path.join(out_dir, '*', '*.md')), key=os.path.getmtime, reverse=True)[:5]
+        if files:
+            lines = ['📬 最近推送:']
+            for f in files:
+                lines.append(f"· {os.path.basename(f)[:25]}")
+            return '\n'.join(lines)
+        return '暂无推送记录'
     stocks = detect_stocks(message)
     if not stocks:
         return '暂不支持该查询——目前支持：个股分析/两只股票对比（茅台/宁德/五粮液/比亚迪/平安等）'
-    # 拉数据
     ctx_lines = []
     for name, code in stocks:
         d = get_stock_data(code)

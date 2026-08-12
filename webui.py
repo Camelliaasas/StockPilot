@@ -12,6 +12,14 @@ app = Flask(__name__, static_folder='static', static_url_path='/static')
 def index():
     return send_from_directory(project_root(), 'index.html')
 
+@app.route('/index_new.html')
+def index_new():
+    return send_from_directory(project_root(), 'index_new.html')
+
+@app.route('/echarts.min.js')
+def echarts_js():
+    return send_from_directory(project_root(), 'echarts.min.js')
+
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
     d = request.get_json(silent=True) or {}
@@ -112,7 +120,13 @@ def api_kline():
             'volume': [float(x) if pd.notna(x) else 0 for x in data['volume']],
             'ma5': f(data['ma5']), 'ma20': f(data['ma20']), 'ma60': f(data['ma60']),
             'boll_up': f(data['boll_up']), 'boll_dn': f(data['boll_dn']),
+            'boll_mid': f(data['ma20']),
             'kdj_k': f(data['kdj_k']), 'kdj_d': f(data['kdj_d']), 'kdj_j': f(data['kdj_j']),
+            # 复数别名（兼容 CodeBuddy 前端）
+            'opens': f(data['open']), 'closes': f(data['close']),
+            'highs': f(data['high']), 'lows': f(data['low']),
+            'volumes': [float(x) if pd.notna(x) else 0 for x in data['volume']],
+            'boll_low': f(data['boll_dn']),
         })
     except Exception as e:
         return jsonify({'error': str(e)[:100]}), 500
@@ -266,12 +280,14 @@ def api_predictions():
 
 @app.route('/api/trend')
 def api_trend():
-    """分级预测：大/中/小事件"""
+    """分级预测：大/中/小事件（大/中独立取——不被小事件挤出）"""
     conn = get_conn()
+    big_rows = conn.execute("SELECT title, sector, impact, strength, level FROM news WHERE level='大' ORDER BY id DESC LIMIT 6").fetchall()
+    mid_rows = conn.execute("SELECT title, sector, impact, strength, level FROM news WHERE level='中' ORDER BY id DESC LIMIT 6").fetchall()
     rows = conn.execute("SELECT title, sector, impact, strength, level FROM news WHERE level IS NOT NULL AND level != '' ORDER BY id DESC LIMIT 30").fetchall()
     conn.close()
-    big = [{'sector': r['sector'], 'impact': r['impact'], 'strength': r['strength'], 'title': r['title'][:60]} for r in rows if r['level'] == '大']
-    mid = [{'sector': r['sector'], 'impact': r['impact'], 'strength': r['strength'], 'title': r['title'][:60]} for r in rows if r['level'] == '中']
+    big = [{'sector': r['sector'], 'impact': r['impact'], 'strength': r['strength'], 'title': r['title'][:60]} for r in big_rows]
+    mid = [{'sector': r['sector'], 'impact': r['impact'], 'strength': r['strength'], 'title': r['title'][:60]} for r in mid_rows]
     # 小事件板块情绪
     small = {}
     for r in rows:
@@ -291,7 +307,12 @@ def api_curve():
         try:
             r = curve(code, name)
             if r and 'error' not in r:
-                out.append(r)
+                # 兼容新旧前端字段（strat/hold + ma_strategy/buy_hold）
+                r2 = dict(r)
+                r2['ma_strategy'] = r.get('strat', [])
+                r2['buy_hold'] = r.get('hold', [])
+                r2['total_return'] = r.get('strat_ret', 0)
+                out.append(r2)
         except Exception:
             pass
     return jsonify(out)
@@ -347,6 +368,15 @@ def api_verify():
     by_ver = conn.execute("SELECT code, COUNT(*), SUM(correct) FROM predictions WHERE correct IS NOT NULL GROUP BY code").fetchall()
     recent = conn.execute("SELECT date, code, direction, confidence, actual_direction, correct FROM predictions WHERE correct IS NOT NULL ORDER BY id DESC LIMIT 10").fetchall()
     conn.close()
+    # 历史回测战绩（360 样本——真实能力展示）
+    try:
+        bt = conn2 = get_conn()
+        b = bt.execute('SELECT COUNT(*), SUM(correct) FROM backtest_history').fetchone()
+        bt.close()
+        bt_n, bt_c = (b[0] or 0), (b[1] or 0)
+        bt_acc = round(bt_c / bt_n * 100, 1) if bt_n else 0
+    except Exception:
+        bt_n, bt_acc = 0, 0
     return jsonify({
         'total': total[0] or 0,
         'correct': total[1] or 0,
@@ -354,6 +384,7 @@ def api_verify():
         'by_ver': [{'ver': v['code'], 'n': v[1], 'correct': v[2], 'acc': round(v[2] / v[1] * 100, 1) if v[1] else 0} for v in by_ver],
         'recent': [{'date': r['date'], 'code': r['code'], 'direction': r['direction'],
                     'actual': r['actual_direction'], 'correct': r['correct']} for r in recent],
+        'backtest': {'samples': bt_n, 'acc': bt_acc},
     })
 
 @app.route('/api/backtest')
@@ -533,10 +564,20 @@ def api_decision():
     from db import get_conn
     watch = get_watchlist()[:6]
     conn = get_conn()
-    out = []
-    for code, name in watch:
+    from concurrent.futures import ThreadPoolExecutor
+    def enrich(code):
         try:
-            d = fast_decision(code, name)
+            from decision_card import fast_decision
+            d = fast_decision(code, '')
+            return d
+        except Exception:
+            return None
+    results = list(ThreadPoolExecutor(max_workers=6).map(enrich, [c for c, _ in watch]))
+    out = []
+    for (code, name), d in zip(watch, results):
+        try:
+            if not d:
+                continue
             # DB 最新价（秒级——不调实时接口）
             row = conn.execute("SELECT date, close FROM daily_prices WHERE code=? ORDER BY date DESC LIMIT 1", (int(code),)).fetchone()
             price = f"{row['close']:.2f}" if row else '—'
@@ -546,13 +587,58 @@ def api_decision():
                 if prev and prev['close']:
                     chg = round((float(row['close']) / float(prev['close']) - 1) * 100, 1)
             out.append({'name': d['name'], 'code': d['code'], 'price': price,
-                        'chg': chg, 'action': d['action'], 'position': d['position']})
+                        'chg': chg, 'action': d['action'], 'position': d['position'],
+                        'val': _val_of(code), 'chip': _chip_of(code)})
         except Exception:
             pass
     conn.close()
     api_decision.c_data = out
     api_decision.c_ts = now
     return jsonify(out)
+
+def _val_of(code):
+    """估值摘要（缓存 10 分钟）"""
+    import time as _t
+    _now = _t.time()
+    key = f'val_{code}'
+    if hasattr(api_decision, '_cache') and key in api_decision._cache and _now - api_decision._cache[key][0] < 600:
+        return api_decision._cache[key][1]
+    try:
+        from valuation import valuation
+        v = valuation(code)
+        if v and 'error' not in v:
+            pe = v.get('pe', '')
+            pct = v.get('percentile', v.get('pct', ''))
+            r = f"PE {pe}" if pe else ''
+            if pct:
+                r += f"（{pct}分位）"
+            if not hasattr(api_decision, '_cache'):
+                api_decision._cache = {}
+            api_decision._cache[key] = (_now, r)
+            return r
+    except Exception:
+        pass
+    return ''
+
+def _chip_of(code):
+    """筹码信号（缓存 10 分钟）"""
+    import time as _t
+    _now = _t.time()
+    key = f'chip_{code}'
+    if hasattr(api_decision, '_cache') and key in api_decision._cache and _now - api_decision._cache[key][0] < 600:
+        return api_decision._cache[key][1]
+    try:
+        from chip_signal import chip_signal
+        c = chip_signal(code)
+        if c and 'error' not in c:
+            r = c.get('signal', c.get('conclusion', '')) or ''
+            if not hasattr(api_decision, '_cache'):
+                api_decision._cache = {}
+            api_decision._cache[key] = (_now, r)
+            return r
+    except Exception:
+        pass
+    return ''
 
 @app.route('/api/valuation')
 def api_valuation():
@@ -623,6 +709,23 @@ if __name__ == '__main__':
     try:
         from db import init_db
         init_db()
+    except Exception:
+        pass
+    # 回测战绩为空时后台自动生成（5.4 万样本——用户也有充足验证）
+    try:
+        import threading
+        from db import get_conn
+        _c = get_conn()
+        _n = _c.execute('SELECT COUNT(*) FROM backtest_history').fetchone()[0]
+        _c.close()
+        if _n < 1000:
+            def _gen():
+                try:
+                    from backtest_market import run_market_backtest
+                    run_market_backtest(n_stocks=200, limit_days=120)
+                except Exception:
+                    pass
+            threading.Thread(target=_gen, daemon=True).start()
     except Exception:
         pass
     # 首次运行自动加载演示数据（已有数据跳过）

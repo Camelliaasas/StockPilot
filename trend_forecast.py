@@ -6,16 +6,22 @@ from db import get_conn
 from sentiment_llm import llm_analyze, get_llm_key
 
 def get_events():
-    """从新闻库读事件（按级别）"""
+    """从新闻库读事件（按级别）——大/中事件独立取（不被最新小事件挤出）"""
     conn = get_conn()
     rows = conn.execute("""
         SELECT title, sector, impact, strength, level FROM news
         WHERE level IS NOT NULL AND level != ''
         ORDER BY id DESC LIMIT 40
     """).fetchall()
+    big = conn.execute("""
+        SELECT title, sector, impact, strength, level FROM news
+        WHERE level = '大' ORDER BY id DESC LIMIT 8
+    """).fetchall()
+    mid = conn.execute("""
+        SELECT title, sector, impact, strength, level FROM news
+        WHERE level = '中' ORDER BY id DESC LIMIT 8
+    """).fetchall()
     conn.close()
-    big = [r for r in rows if r['level'] == '大']
-    mid = [r for r in rows if r['level'] == '中']
     small = [r for r in rows if r['level'] == '小']
     return big, mid, small
 

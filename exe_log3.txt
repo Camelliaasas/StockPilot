@@ -1,0 +1,35 @@
+ * Serving Flask app 'webui'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5521
+Press CTRL+C to quit
+127.0.0.1 - - [12/Aug/2026 14:53:24] "GET /api/paper HTTP/1.1" 200 -
+[2026-08-12 14:53:31,593] ERROR in app: Exception on /api/market [GET]
+Traceback (most recent call last):
+  File "flask\app.py", line 1511, in wsgi_app
+  File "flask\app.py", line 919, in full_dispatch_request
+  File "flask\app.py", line 917, in full_dispatch_request
+  File "flask\app.py", line 902, in dispatch_request
+  File "webui.py", line 219, in api_market
+sqlite3.OperationalError: no such table: daily_prices
+127.0.0.1 - - [12/Aug/2026 14:53:31] "GET /api/market HTTP/1.1" 500 -
+  0%|          | 0/4 [00:00<?, ?it/s] 25%|¨€¨€¨„       | 1/4 [00:00<00:01,  2.49it/s] 50%|¨€¨€¨€¨€¨€     | 2/4 [00:00<00:00,  3.10it/s] 75%|¨€¨€¨€¨€¨€¨€¨€¨„  | 3/4 [00:00<00:00,  3.85it/s]100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 4/4 [00:01<00:00,  3.78it/s]                                             127.0.0.1 - - [12/Aug/2026 14:53:34] "GET /api/macro HTTP/1.1" 200 -
+[2026-08-12 14:53:34,667] ERROR in app: Exception on /api/portfolio [GET]
+Traceback (most recent call last):
+  File "flask\app.py", line 1511, in wsgi_app
+  File "flask\app.py", line 919, in full_dispatch_request
+  File "flask\app.py", line 917, in full_dispatch_request
+  File "flask\app.py", line 902, in dispatch_request
+  File "webui.py", line 389, in api_portfolio
+sqlite3.OperationalError: no such table: positions
+127.0.0.1 - - [12/Aug/2026 14:53:34] "GET /api/portfolio HTTP/1.1" 500 -
+127.0.0.1 - - [12/Aug/2026 14:53:34] "GET /api/decision HTTP/1.1" 200 -
+[2026-08-12 14:54:31,594] ERROR in app: Exception on /api/market [GET]
+Traceback (most recent call last):
+  File "flask\app.py", line 1511, in wsgi_app
+  File "flask\app.py", line 919, in full_dispatch_request
+  File "flask\app.py", line 917, in full_dispatch_request
+  File "flask\app.py", line 902, in dispatch_request
+  File "webui.py", line 219, in api_market
+sqlite3.OperationalError: no such table: daily_prices
+127.0.0.1 - - [12/Aug/2026 14:54:31] "GET /api/market HTTP/1.1" 500 -
