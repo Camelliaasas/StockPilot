@@ -25,8 +25,13 @@ def api_chat():
 
 @app.route('/api/intraday')
 def api_intraday():
-    """当日分时（新浪——1970 点）"""
-    code = request.args.get('code', '600519')
+    """当日分时（新浪——1970 点）——缓存 60 秒"""
+    import time as _t
+    _now = _t.time()
+    _key = request.args.get('code', '600519')
+    if hasattr(api_intraday, 'c_ts') and hasattr(api_intraday, 'c_code') and api_intraday.c_code == _key and _now - api_intraday.c_ts < 60:
+        return jsonify(api_intraday.c_data)
+    code = _key
     symbol = ('sh' if code.startswith('6') else 'sz') + code
     try:
         import akshare as ak
@@ -40,13 +45,17 @@ def api_intraday():
         prev_close = float(df['close'].iloc[0]) if len(df) > 0 else 0
         # 均价线（累计成交额/累计成交量）
         df['avg'] = (df['close'] * df['volume']).cumsum() / df['volume'].cumsum().replace(0, None)
-        return jsonify({
+        _r = {
             'times': [str(d)[11:16] for d in df['day']],
             'prices': [round(float(v), 2) for v in df['close']],
             'avg': [round(float(v), 2) if pd.notna(v) else None for v in df['avg']],
             'volume': [float(v) for v in df['volume']],
             'prev_close': round(prev_close, 2),
-        })
+        }
+        api_intraday.c_data = _r
+        api_intraday.c_ts = _now
+        api_intraday.c_code = _key
+        return jsonify(_r)
     except Exception as e:
         return jsonify({'error': str(e)[:80]}), 500
 
