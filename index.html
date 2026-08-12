@@ -4541,7 +4541,7 @@ function renderRisk(data) {
 	  const tbody = document.getElementById("backtestBody");
 	  const noteEl = document.getElementById("backtestNote");
 	  if (!data || !data.results || !data.results.length) {
-	    tbody.innerHTML = "<tr><td colspan="3" class="section-loading">暂无回测数据</td></tr>";
+	    tbody.innerHTML = "<tr><td colspan='3' class='section-loading'>暂无回测数据</td></tr>";
 	    noteEl.style.display = "none";
 	    return;
 	  }
@@ -6239,7 +6239,6 @@ function sendDrawerQuick(type) {
     document.getElementById('sdBtnReport').disabled = false;
   });
 }
-
 // ESC 关闭抽屉（先于聊天框）
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {

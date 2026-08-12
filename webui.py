@@ -553,6 +553,55 @@ def api_decision():
     api_decision.c_ts = now
     return jsonify(out)
 
+@app.route('/api/valuation')
+def api_valuation():
+    """估值分位（贵不贵）——缓存 10 分钟"""
+    import time as _t
+    _now = _t.time()
+    _key = request.args.get('code', '600519')
+    if hasattr(api_valuation, 'c_ts') and hasattr(api_valuation, 'c_code') and api_valuation.c_code == _key and _now - api_valuation.c_ts < 600:
+        return jsonify(api_valuation.c_data)
+    from valuation import valuation
+    r = valuation(_key)
+    api_valuation.c_data = r
+    api_valuation.c_ts = _now
+    api_valuation.c_code = _key
+    return jsonify(r)
+
+@app.route('/api/chips')
+def api_chips():
+    """筹码信号（股东户数/集中度）——缓存 10 分钟"""
+    import time as _t
+    _now = _t.time()
+    _key = request.args.get('code', '600519')
+    if hasattr(api_chips, 'c_ts') and hasattr(api_chips, 'c_code') and api_chips.c_code == _key and _now - api_chips.c_ts < 600:
+        return jsonify(api_chips.c_data)
+    from chip_signal import chip_signal
+    r = chip_signal(_key)
+    api_chips.c_data = r
+    api_chips.c_ts = _now
+    api_chips.c_code = _key
+    return jsonify(r)
+
+@app.route('/api/index')
+def api_index():
+    """主要指数实时行情（上证/深成/创业板/沪深300）——DB 最新"""
+    import pandas as _pd
+    from db import get_conn as _gc
+    conn = _gc()
+    out = []
+    for code, name in [('000001', '上证指数'), ('399001', '深证成指'), ('399006', '创业板指'), ('000300', '沪深300')]:
+        try:
+            rows = conn.execute("SELECT date, close FROM index_daily WHERE code=? ORDER BY date DESC LIMIT 2", (code,)).fetchall()
+            if len(rows) >= 2:
+                cur = float(rows[0]['close'])
+                chg = (cur / float(rows[1]['close']) - 1) * 100
+                out.append({'code': code, 'name': name, 'value': round(cur, 2), 'chg': round(chg, 2)})
+        except Exception:
+            pass
+    conn.close()
+    return jsonify(out)
+
 @app.route('/api/futures')
 def api_futures():
     """期货主力分析"""
