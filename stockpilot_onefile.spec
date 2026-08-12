@@ -30,6 +30,7 @@ datas = [
     (os.path.join(project, 'model_index.joblib'), '.'),
     (os.path.join(project, 'calibrator_index.joblib'), '.'),
     (os.path.join(project, '.env.example'), '.'),
+    (os.path.join(project, 'demo_data.db'), '.'),
 ] + _ak_data
 
 a = Analysis(

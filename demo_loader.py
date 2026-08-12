@@ -9,7 +9,8 @@ CORE = [('600519', '贵州茅台'), ('300750', '宁德时代'), ('603259', '药�
         ('600036', '招商银行'), ('002594', '比亚迪'), ('601012', '隆基绿能'), ('000858', '五粮液')]
 
 def load_demo():
-    import os as _os
+    import os as _os, shutil as _sh
+    from paths import project_root
     log_path = _os.path.join(_os.path.expanduser('~'), 'StockPilotData', 'demo_log.txt')
     def log(msg):
         try:
@@ -24,8 +25,27 @@ def load_demo():
         log(f'✅ 已有数据 {cnt} 行——跳过演示加载')
         print(f'✅ 已有数据 {cnt} 行——跳过演示加载')
         return
-    log('📥 首次运行——加载演示数据...')
-    print('📥 首次运行——加载演示数据（8 只核心股×11年+指数）...')
+    log('📥 首次运行——加载演示数据（资源复制优先）...')
+    print('📥 首次运行——加载演示数据（资源复制优先）...')
+    # 优先：内置演示数据（demo_data.db——exe 打包资源——无网络秒级）
+    demo_src = _os.path.join(project_root(), 'demo_data.db')
+    if _os.path.exists(demo_src):
+        try:
+            from db import DB as _DB
+            _sh.copyfile(demo_src, _DB)
+            log(f'✅ 演示数据复制完成（内置资源——{_os.path.getsize(demo_src)//1024}KB）')
+            print('✅ 演示数据复制完成（内置资源）')
+            # 同步自选 + 补建其他表
+            import sqlite3
+            from db import init_db
+            init_db()
+            c2 = sqlite3.connect(_DB)
+            c2.executemany('INSERT OR IGNORE INTO watchlist (code, name) VALUES (?,?)', CORE)
+            c2.commit(); c2.close()
+            return
+        except Exception as e:
+            log(f'⚠️ 资源复制失败: {str(e)[:60]}——尝试网络拉取')
+    # fallback：网络拉取（8 只核心股×11年+指数）
     total = 0
     for code, name in CORE:
         symbol = ('sh' if code.startswith('6') else 'sz') + code
