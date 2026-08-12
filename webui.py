@@ -220,8 +220,8 @@ def api_market():
         conn.close()
         return jsonify({'error': '数据不足'}), 404
     d1, d0 = last2[0]['date'], last2[1]['date']
-    p1 = _pd.read_sql(f"SELECT code, close FROM daily_prices WHERE date='{d1}'", conn)
-    p0 = _pd.read_sql(f"SELECT code, close FROM daily_prices WHERE date='{d0}'", conn)
+    p1 = _pd.read_sql("SELECT code, close FROM daily_prices WHERE date=?", conn, params=(d1,))
+    p0 = _pd.read_sql("SELECT code, close FROM daily_prices WHERE date=?", conn, params=(d0,))
     conn.close()
     m = p1.merge(p0, on='code', suffixes=('_1', '_0'))
     m['chg'] = (m['close_1'] / m['close_0'] - 1) * 100
