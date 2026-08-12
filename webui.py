@@ -705,11 +705,10 @@ def api_futures():
     return jsonify(out)
 
 if __name__ == '__main__':
-    # 首次启动：若库为空——直接复制内置演示库（无连接无锁——init_db 前）
+    # 首次启动：若库为空——直接导入内置演示数据（读+插——无锁——已验证）
     try:
         import os as _os
-        import shutil as _sh
-        from paths import project_root, data_path
+        from paths import data_path
         _dbp = data_path()
         _empty = True
         if _os.path.exists(_dbp):
@@ -721,15 +720,9 @@ if __name__ == '__main__':
                 _empty = _n0 < 100
             except Exception:
                 _empty = True
-        _demo_src = _os.path.join(project_root(), 'demo_data.db')
-        if _empty and _os.path.exists(_demo_src) and _dbp != _demo_src:
-            # 复制（此刻无任何连接——无锁）
-            _os.makedirs(_os.path.dirname(_dbp), exist_ok=True)
-            for _ext in ['', '-wal', '-shm']:
-                if _os.path.exists(_dbp + _ext):
-                    _os.remove(_dbp + _ext)
-            _sh.copyfile(_demo_src, _dbp)
-            print(f'✅ 内置演示库复制完成（{_os.path.getsize(_dbp)//1024}KB）')
+        if _empty:
+            from demo_loader import load_demo
+            load_demo()
     except Exception:
         pass
     # 初始化数据库表（exe 干净库必需）

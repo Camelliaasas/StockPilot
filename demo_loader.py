@@ -38,12 +38,19 @@ def load_demo():
             _d_rows = _demo.execute('SELECT * FROM daily_prices').fetchall()
             _i_rows = _demo.execute('SELECT * FROM index_daily').fetchall()
             _w_rows = _demo.execute('SELECT * FROM watchlist').fetchall()
+            try:
+                _bt_rows = _demo.execute('SELECT * FROM backtest_history').fetchall()
+            except Exception:
+                _bt_rows = []
             _demo.close()
             _c = sqlite3.connect(_DB)
             _c.execute('PRAGMA busy_timeout=8000')
             _c.executemany('INSERT OR REPLACE INTO daily_prices VALUES (?,?,?,?,?,?,?,?,?,?)', _d_rows)
             _c.executemany('INSERT OR REPLACE INTO index_daily VALUES (?,?,?,?,?,?,?)', _i_rows)
             _c.executemany('INSERT OR IGNORE INTO watchlist VALUES (?,?)', _w_rows)
+            if _bt_rows:
+                _c.execute('CREATE TABLE IF NOT EXISTS backtest_history (code TEXT, date TEXT, pred INT, actual INT, correct INT)')
+                _c.executemany('INSERT OR REPLACE INTO backtest_history VALUES (?,?,?,?,?)', _bt_rows)
             _c.commit(); _c.close()
             log(f'✅ 演示数据导入完成（内置资源——{len(_d_rows):,} 行）')
             print(f'✅ 演示数据导入完成（内置资源——{len(_d_rows):,} 行）')
