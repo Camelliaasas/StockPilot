@@ -289,6 +289,11 @@ def api_curve():
 @app.route('/api/paper')
 def api_paper():
     """模拟盘多策略回放（MA/MACD/海龟——2024-2026）"""
+    from functools import wraps
+    import time as _t
+    _now = _t.time()
+    if hasattr(api_paper, 'c_ts') and _now - api_paper.c_ts < 600:
+        return jsonify(api_paper.c_data)
     from paper_replay import replay_multi
     out = []
     for code, name in [('600519', '贵州茅台'), ('300750', '宁德时代'), ('603259', '药明康德')]:
@@ -298,6 +303,8 @@ def api_paper():
                 out.append({'name': name, 'code': code, 'strategies': rs})
         except Exception:
             pass
+    api_paper.c_data = out
+    api_paper.c_ts = _now
     return jsonify(out)
 
 @app.route('/api/predict_history')
@@ -359,6 +366,10 @@ def api_backtest():
 
 @app.route('/api/portfolio')
 def api_portfolio():
+    import time as _t
+    _now = _t.time()
+    if hasattr(api_portfolio, 'c_ts') and _now - api_portfolio.c_ts < 600:
+        return jsonify(api_portfolio.c_data)
     """组合分析（真实持仓——收益/风险/相关性——无持仓用自选）"""
     import akshare as ak
     import pandas as pd
@@ -393,9 +404,12 @@ def api_portfolio():
     avg_corr = (corr.values.sum() - n) / (n * (n - 1)) if n > 1 else 0
     # 集中度（最大单票权重）
     max_w = 1 / n
-    return jsonify({'annual_ret': round(annual * 100, 1), 'vol': round(vol * 100, 1),
-                    'sharpe': round(sharpe, 2), 'avg_corr': round(avg_corr, 2),
-                    'max_weight': round(max_w * 100, 0), 'names': list(rets.keys())})
+    _r = {'annual_ret': round(annual * 100, 1), 'vol': round(vol * 100, 1),
+          'sharpe': round(sharpe, 2), 'avg_corr': round(avg_corr, 2),
+          'max_weight': round(max_w * 100, 0), 'names': list(rets.keys())}
+    api_portfolio.c_data = _r
+    api_portfolio.c_ts = _now
+    return jsonify(_r)
 
 @app.route('/api/risk')
 def api_risk():
@@ -450,10 +464,17 @@ def api_macro_chart():
 
 @app.route('/api/macro')
 def api_macro():
+    import time as _t
+    _now = _t.time()
+    if hasattr(api_macro, 'c_ts') and _now - api_macro.c_ts < 600:
+        return jsonify(api_macro.c_data)
     """宏观环境"""
     from macro_env import macro_env
     e = macro_env()
-    return jsonify({'parts': e.get('parts', []), 'verdict': e.get('verdict', '')})
+    _r = {'parts': e.get('parts', []), 'verdict': e.get('verdict', '')}
+    api_macro.c_data = _r
+    api_macro.c_ts = _now
+    return jsonify(_r)
 
 @app.route('/api/watchlist', methods=['GET', 'POST', 'DELETE'])
 def api_watchlist():
