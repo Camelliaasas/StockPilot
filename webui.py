@@ -1,6 +1,7 @@
 """股票预测 Web 服务：AI 聊天框 + 看板"""
 import sys, os, json
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from paths import project_root
 from flask import Flask, request, jsonify, send_from_directory
 from chat_engine import chat
 from db import get_conn
@@ -9,7 +10,7 @@ app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 @app.route('/')
 def index():
-    return send_from_directory('.', 'index.html')
+    return send_from_directory(project_root(), 'index.html')
 
 @app.route('/api/chat', methods=['POST'])
 def api_chat():

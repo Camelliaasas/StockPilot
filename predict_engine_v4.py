@@ -1,6 +1,7 @@
 """预测引擎 v4：3日周期(最优55.8%) + 高置信门槛(70%+才给方向——历史90%准)
 策略：宁缺毋滥——低于门槛输出"观望"——不给错信号"""
 import sys, os, json
+from paths import model_path
 import akshare as ak
 import pandas as pd
 import numpy as np
@@ -52,14 +53,14 @@ def train_3d():
     import lightgbm as lgb
     m = lgb.LGBMClassifier(n_estimators=300, learning_rate=0.05, num_leaves=31, max_depth=8, random_state=42, n_jobs=-1, verbose=-1)
     m.fit(X, y)
-    joblib.dump(m, 'C:/Users/23643/src_workflow/stock_predict/model_index_3d.joblib')
+    joblib.dump(m, model_path('model_index_3d.joblib'))
     print('✅ 保存 model_index_3d.joblib')
     return m
 
 def ml_predict_3d():
     """3 日预测 + 高置信门槛（70%+ 才给方向）"""
     import os as _os
-    model_path = 'C:/Users/23643/src_workflow/stock_predict/model_index_3d.joblib'
+    model_path = model_path('model_index_3d.joblib')
     if not _os.path.exists(model_path):
         train_3d()
     model = joblib.load(model_path)

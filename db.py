@@ -1,7 +1,8 @@
 """数据库层：SQLite 海量存储——日线/指数/期货/新闻"""
 import sqlite3, os
 
-DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.db')
+from paths import data_path
+DB = data_path()
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS daily_prices (

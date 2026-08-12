@@ -1,6 +1,7 @@
 """预测引擎 v3：二分类（涨/跌）+ 5日趋势 + LLM 新闻 + 多因子——基于真实验证改进
 （v2 三分类含"平"——指数 62% 平——猜平虚高——v3 不猜平——只判断涨/跌+置信）"""
 import sys, os, json, re
+from paths import model_path
 import akshare as ak
 import pandas as pd
 import numpy as np
@@ -42,7 +43,7 @@ FEATS = ['ret', 'ma5', 'ma20', 'ma60', 'macd', 'macd_hist', 'rsi', 'vol_ratio', 
 
 def ml_predict():
     """版A：二分类模型（涨/跌——53.6% 验证）——指数专用——校准置信"""
-    model = joblib.load('C:/Users/23643/src_workflow/stock_predict/model_index_binary.joblib')
+    model = joblib.load(model_path('model_index_binary.joblib'))
     idx = ak.stock_zh_index_daily(symbol='sh000001').tail(120)
     cur = features(idx)
     row = cur.iloc[-1]
@@ -52,7 +53,7 @@ def ml_predict():
     up_p = float(proba[list(model.classes_).index(1)]) if 1 in model.classes_ else 0.5
     # 校准（isotonic——高置信时实际上涨率更高）
     try:
-        cal = joblib.load('C:/Users/23643/src_workflow/stock_predict/calibrator_index.joblib')
+        cal = joblib.load(model_path('calibrator_index.joblib'))
         up_p = float(cal.predict([up_p])[0])
     except Exception:
         pass

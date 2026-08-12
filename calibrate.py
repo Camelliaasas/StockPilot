@@ -1,5 +1,6 @@
 """概率校准：用历史滚动验证数据校准模型置信度（isotonic——说70%真70%）"""
 import sys, os
+from paths import model_path
 import akshare as ak
 import pandas as pd
 import numpy as np
@@ -12,7 +13,7 @@ FEATS = ['ret', 'ma5', 'ma20', 'ma60', 'macd', 'macd_hist', 'rsi', 'vol_ratio', 
 
 def build_calibrator():
     """用历史数据拟合校准器"""
-    model = joblib.load('C:/Users/23643/src_workflow/stock_predict/model_index_binary.joblib')
+    model = joblib.load(model_path('model_index_binary.joblib'))
     idx = ak.stock_zh_index_daily(symbol='sh000001')
     df = idx.copy().reset_index(drop=True)
     df['ret'] = df['close'].pct_change()
@@ -60,7 +61,7 @@ def build_calibrator():
             actual = y[split:][mask].mean()
             cal = cal_test[mask].mean()
             print(f'  {bins[i]:.2f}-{bins[i+1]:.2f} | {mask.sum():4d} | {actual*100:5.1f}% | {cal*100:5.1f}%')
-    joblib.dump(iso, 'C:/Users/23643/src_workflow/stock_predict/calibrator_index.joblib')
+    joblib.dump(iso, model_path('calibrator_index.joblib'))
     print('\n✅ 校准器已保存 calibrator_index.joblib')
 
 if __name__ == '__main__':

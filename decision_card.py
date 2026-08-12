@@ -1,5 +1,6 @@
 """每日决策卡：每只自选股明确决策（买入/持有/卖出/观望）+ 仓位建议 + 实时价"""
 import sys, os, json
+from paths import model_path
 import akshare as ak
 import pandas as pd
 import numpy as np
@@ -44,7 +45,7 @@ def fast_decision(code, name, news=None):
         import joblib as _jb
         import numpy as _np
         import pandas as _pd
-        m = _jb.load('C:/Users/23643/src_workflow/stock_predict/model_stock_binary_full.joblib')
+        m = _jb.load(model_path('model_stock_binary_full.joblib'))
         # 从本地 DB 读（秒级——不调腾讯）
         from db import get_conn as _gc
         _conn = _gc()
@@ -110,7 +111,7 @@ def trend_10d(code):
     import pandas as _pd
     from db import get_conn as _gc
     try:
-        m = _jb.load('C:/Users/23643/src_workflow/stock_predict/model_stock_10d.joblib')
+        m = _jb.load(model_path('model_stock_10d.joblib'))
         conn = _gc()
         df = _pd.read_sql(f"SELECT * FROM daily_prices WHERE code={int(code)} ORDER BY date DESC LIMIT 130", conn)
         conn.close()
@@ -162,7 +163,7 @@ def decision(code, name, news):
     try:
         import joblib as _jb
         import numpy as _np
-        m = _jb.load('C:/Users/23643/src_workflow/stock_predict/model_stock_binary_full.joblib')
+        m = _jb.load(model_path('model_stock_binary_full.joblib'))
         df = ak.stock_zh_a_daily(symbol=symbol, start_date='20260101', end_date='20260810', adjust='qfq')
         if df is not None and len(df) > 30:
             c = df['close'].reset_index(drop=True)
