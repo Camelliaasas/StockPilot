@@ -619,6 +619,12 @@ def api_futures():
     return jsonify(out)
 
 if __name__ == '__main__':
+    # 初始化数据库表（exe 干净库必需）
+    try:
+        from db import init_db
+        init_db()
+    except Exception:
+        pass
     # 首次运行自动加载演示数据（已有数据跳过）
     try:
         from demo_loader import load_demo
