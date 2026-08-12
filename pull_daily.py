@@ -14,16 +14,23 @@ def main():
     ok = 0
     # 增量拉最近 30 日（覆盖新交易日）
     for code, name in STOCKS:
+        df = None
         try:
+            # 先试今天（如果已收盘有当日数据）
             df = ak.stock_zh_a_daily(symbol=code, start_date=pd.Timestamp.now().strftime('%Y%m%d'), end_date='', adjust='qfq')
-            if df is None or len(df) == 0:
-                df = ak.stock_zh_a_daily(symbol=code, start_date='20260701', end_date='20260810', adjust='qfq')
-            if len(df) > 0:
-                upsert_prices(code, name, df.to_dict('records'))
-                ok += 1
-            time.sleep(0.3)
-        except Exception as e:
-            print(f'❌ {code}: {str(e)[:50]}')
+        except Exception:
+            df = None
+        if df is None or len(df) == 0:
+            # fallback：近 30 日窗口（end_date 用未来日期——akshare 自动截断到最新交易日）
+            try:
+                df = ak.stock_zh_a_daily(symbol=code, start_date='20260715', end_date='20261231', adjust='qfq')
+            except Exception as e:
+                print(f'❌ {code}: {str(e)[:50]}')
+                continue
+        if len(df) > 0:
+            upsert_prices(code, name, df.to_dict('records'))
+            ok += 1
+        time.sleep(0.3)
     # 指数
     try:
         idx = ak.stock_zh_index_daily(symbol='sh000001')
