@@ -728,10 +728,26 @@ if __name__ == '__main__':
             threading.Thread(target=_gen, daemon=True).start()
     except Exception:
         pass
-    # 首次运行自动加载演示数据（已有数据跳过）
+    # 首次运行自动加载演示数据（延时+重试——exe 启动早期 akshare 未就绪）
+    def _load_demo_retry(tries=0):
+        try:
+            from demo_loader import load_demo
+            load_demo()
+            # 验证是否拉到（exe 库空则重试）
+            from db import get_conn
+            _c = get_conn()
+            _n = _c.execute('SELECT COUNT(*) FROM daily_prices').fetchone()[0]
+            _c.close()
+            if _n < 100 and tries < 4:
+                import threading as _th
+                _th.Timer(60, lambda: _load_demo_retry(tries + 1)).start()
+        except Exception:
+            if tries < 4:
+                import threading as _th
+                _th.Timer(60, lambda: _load_demo_retry(tries + 1)).start()
     try:
-        from demo_loader import load_demo
-        load_demo()
+        import threading as _th2
+        _th2.Timer(20, _load_demo_retry).start()
     except Exception:
         pass
     # 慢 API 缓存预热（后台线程——paper/macro 首次也秒回）

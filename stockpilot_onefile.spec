@@ -35,12 +35,14 @@ datas = [
 a = Analysis(
     [os.path.join(project, 'webui.py')],
     pathex=[project],
-    binaries=[],
+    binaries=[(r'C:\Users\23643\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\py_mini_racer\mini_racer.dll', 'py_mini_racer'),
+              (r'C:\Users\23643\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\py_mini_racer\icudtl.dat', 'py_mini_racer')],
     datas=datas,
     hiddenimports=[
         'lightgbm', 'sklearn.isotonic', 'sklearn.metrics',
         'akshare', 'pandas', 'numpy', 'joblib', 'flask',
-        'websocket', 'socks',
+        'websocket', 'socks', 'py_mini_racer',
+        'lxml', 'lxml._elementpath', 'py_mini_racer.ctypes_py_mini_racer',
     ],
     hookspath=[],
     hooksconfig={},
