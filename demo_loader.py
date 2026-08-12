@@ -31,20 +31,25 @@ def load_demo():
     demo_src = _os.path.join(project_root(), 'demo_data.db')
     if _os.path.exists(demo_src):
         try:
-            from db import DB as _DB
-            _sh.copyfile(demo_src, _DB)
-            log(f'✅ 演示数据复制完成（内置资源——{_os.path.getsize(demo_src)//1024}KB）')
-            print('✅ 演示数据复制完成（内置资源）')
-            # 同步自选 + 补建其他表
+            # 读 demo 库（独立连接）→ 插入主库（无 ATTACH 锁问题）
             import sqlite3
-            from db import init_db
-            init_db()
-            c2 = sqlite3.connect(_DB)
-            c2.executemany('INSERT OR IGNORE INTO watchlist (code, name) VALUES (?,?)', CORE)
-            c2.commit(); c2.close()
+            from db import DB as _DB
+            _demo = sqlite3.connect(demo_src)
+            _d_rows = _demo.execute('SELECT * FROM daily_prices').fetchall()
+            _i_rows = _demo.execute('SELECT * FROM index_daily').fetchall()
+            _w_rows = _demo.execute('SELECT * FROM watchlist').fetchall()
+            _demo.close()
+            _c = sqlite3.connect(_DB)
+            _c.execute('PRAGMA busy_timeout=8000')
+            _c.executemany('INSERT OR REPLACE INTO daily_prices VALUES (?,?,?,?,?,?,?,?,?,?)', _d_rows)
+            _c.executemany('INSERT OR REPLACE INTO index_daily VALUES (?,?,?,?,?,?,?)', _i_rows)
+            _c.executemany('INSERT OR IGNORE INTO watchlist VALUES (?,?)', _w_rows)
+            _c.commit(); _c.close()
+            log(f'✅ 演示数据导入完成（内置资源——{len(_d_rows):,} 行）')
+            print(f'✅ 演示数据导入完成（内置资源——{len(_d_rows):,} 行）')
             return
         except Exception as e:
-            log(f'⚠️ 资源复制失败: {str(e)[:60]}——尝试网络拉取')
+            log(f'⚠️ 资源导入失败: {str(e)[:80]}——尝试网络拉取')
     # fallback：网络拉取（8 只核心股×11年+指数）
     total = 0
     for code, name in CORE:
