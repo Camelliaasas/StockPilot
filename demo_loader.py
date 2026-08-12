@@ -9,12 +9,22 @@ CORE = [('600519', '贵州茅台'), ('300750', '宁德时代'), ('603259', '药�
         ('600036', '招商银行'), ('002594', '比亚迪'), ('601012', '隆基绿能'), ('000858', '五粮液')]
 
 def load_demo():
+    import os as _os
+    log_path = _os.path.join(_os.path.expanduser('~'), 'StockPilotData', 'demo_log.txt')
+    def log(msg):
+        try:
+            with open(log_path, 'a', encoding='utf-8') as f:
+                f.write(msg + '\n')
+        except Exception:
+            pass
     conn = get_conn()
     cnt = conn.execute('SELECT COUNT(*) FROM daily_prices').fetchone()[0]
     conn.close()
     if cnt > 1000:
+        log(f'✅ 已有数据 {cnt} 行——跳过演示加载')
         print(f'✅ 已有数据 {cnt} 行——跳过演示加载')
         return
+    log('📥 首次运行——加载演示数据...')
     print('📥 首次运行——加载演示数据（8 只核心股×11年+指数）...')
     total = 0
     for code, name in CORE:
@@ -29,8 +39,10 @@ def load_demo():
                 conn.commit()
                 conn.close()
                 total += len(rows)
+                log(f'  ✅ {name}: {len(rows)} 行')
                 print(f'  ✅ {name}: {len(rows)} 行')
         except Exception as e:
+            log(f'  ❌ {name}: {str(e)[:80]}')
             print(f'  ❌ {name}: {str(e)[:40]}')
     # 指数
     try:
