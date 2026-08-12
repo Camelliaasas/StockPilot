@@ -545,4 +545,19 @@ if __name__ == '__main__':
         load_demo()
     except Exception:
         pass
+    # 慢 API 缓存预热（后台线程——paper/macro 首次也秒回）
+    import threading as _th
+    def _warmup():
+        import time as _t
+        _t.sleep(2)
+        try:
+            import urllib.request
+            for ep in ['/api/paper', '/api/macro', '/api/portfolio', '/api/decision']:
+                try:
+                    urllib.request.urlopen(f'http://127.0.0.1:5521{ep}', timeout=60).read()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+    _th.Thread(target=_warmup, daemon=True).start()
     app.run(host='127.0.0.1', port=5521, debug=False, threaded=True)
