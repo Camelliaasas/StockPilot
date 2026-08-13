@@ -705,30 +705,38 @@ def api_futures():
     return jsonify(out)
 
 if __name__ == '__main__':
-    # 初始化数据库表（exe 干净库必需——先建表再导入）
-    try:
-        from db import init_db
-        init_db()
-    except Exception:
-        pass
-    # 首次启动：若库为空——导入内置演示数据（读+插 4 表——无锁）
+    # 首次启动：若库为空——用 backup API 复制内置演示库（0.2 秒——无锁——已验证）
     try:
         import os as _os
-        from paths import data_path
+        import sqlite3 as _sql
+        from paths import project_root, data_path
         _dbp = data_path()
         _empty = True
         if _os.path.exists(_dbp):
             try:
-                import sqlite3
-                _c0 = sqlite3.connect(_dbp)
+                _c0 = _sql.connect(_dbp)
                 _n0 = _c0.execute('SELECT COUNT(*) FROM daily_prices').fetchone()[0]
                 _c0.close()
                 _empty = _n0 < 100
             except Exception:
                 _empty = True
-        if _empty:
-            from demo_loader import load_demo
-            load_demo()
+        _demo_src = _os.path.join(project_root(), 'demo_data.db')
+        if _empty and _os.path.exists(_demo_src):
+            _os.makedirs(_os.path.dirname(_dbp), exist_ok=True)
+            for _ext in ['', '-wal', '-shm']:
+                if _os.path.exists(_dbp + _ext):
+                    _os.remove(_dbp + _ext)
+            _s = _sql.connect(_demo_src)
+            _d = _sql.connect(_dbp)
+            _s.backup(_d)
+            _d.close(); _s.close()
+            print(f'✅ 演示库 backup 完成（{_os.path.getsize(_dbp)//1024}KB）')
+    except Exception:
+        pass
+    # 初始化数据库表（exe 干净库必需——先建表再导入）
+    try:
+        from db import init_db
+        init_db()
     except Exception:
         pass
     # 回测战绩为空时后台自动生成（5.4 万样本——用户也有充足验证）
